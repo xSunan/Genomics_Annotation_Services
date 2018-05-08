@@ -41,7 +41,8 @@ class Config(object):
 
   AWS_S3_INPUTS_BUCKET = "gas-inputs"
   AWS_S3_RESULTS_BUCKET = "gas-results"
-  # Set the S3 key (object name) prefix to your CNetID (keep the trailing '/')
+  # Set the S3 key (object name) prefix to your CNetID
+  # Keep the trailing '/' if using my upload code in views.py
   AWS_S3_KEY_PREFIX = "<CNetID>/"
   AWS_S3_ACL = "private"
   AWS_S3_ENCRYPTION = "AES256"

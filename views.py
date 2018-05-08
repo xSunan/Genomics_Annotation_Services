@@ -96,7 +96,10 @@ def create_annotation_job_request():
 @app.route('/annotations', methods=['GET'])
 @authenticated
 def annotations_list():
-  pass
+
+  # Get list of annotations to display
+  
+  return render_template('annotations.html', annotations=None)
 
 
 """Display details of a specific annotation job
