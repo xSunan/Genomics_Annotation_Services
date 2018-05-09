@@ -87,11 +87,7 @@ import boto3
 def send_email_ses(recipients=None, 
   sender=None, subject=None, body=None):
 
-  if app.config['AWS_PROFILE_NAME']:
-    session = boto3.session.Session(profile_name=app.config['AWS_PROFILE_NAME'])
-    ses = session.client('ses', region_name=app.config['AWS_REGION_NAME'])
-  else:
-    ses = boto3.client('ses', region_name=app.config['AWS_REGION_NAME'])
+  ses = boto3.client('ses', region_name=app.config['AWS_REGION_NAME'])
 
   response = ses.send_email(
     Destination = {'ToAddresses': recipients},
