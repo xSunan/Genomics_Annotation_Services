@@ -63,7 +63,7 @@ class Config(object):
   # Change the email address to your username
   MAIL_DEFAULT_SENDER = "<CNetID>@ucmpcs.org"
 
-  FREE_USER_DATA_RETENTION = 31536000 # validity of pre-signed POST requests (in seconds)
+  FREE_USER_DATA_RETENTION = 1800 # time before free user results are archived (in seconds)
 
 class DevelopmentConfig(Config):
   DEBUG = True
