@@ -10,6 +10,7 @@ __author__ = 'Vas Vasiliadis <vas@uchicago.edu>'
 
 import uuid
 import time
+import json
 from datetime import datetime
 
 import boto3
@@ -37,9 +38,10 @@ def annotate():
     config=Config(signature_version='s3v4'))
 
   bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
+  user_id = session['primary_identity']
 
   # Generate unique ID to be used as S3 key (name)
-  key_name = app.config['AWS_S3_KEY_PREFIX'] + str(uuid.uuid4()) + '~${filename}'
+  key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + str(uuid.uuid4()) + '~${filename}'
 
   # Redirect to a route that will call the annotator
   redirect_url = str(request.url) + "/job"
@@ -80,7 +82,8 @@ def create_annotation_job_request():
   # Parse redirect URL query parameters for S3 object info
   bucket_name = request.args.get('bucket')
   key_name = request.args.get('key')
-  job_id = str(uuid.uuid4())
+
+  # Extract the job ID from the S3 key
 
   # Persist job to database
   # Move your code here...
