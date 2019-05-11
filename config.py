@@ -50,7 +50,7 @@ class Config(object):
 
   SQLALCHEMY_DATABASE_TABLE = os.environ['ACCOUNTS_DATABASE_TABLE']
   SQLALCHEMY_DATABASE_URI = "postgresql://" + rds_secret['username'] + ':' + rds_secret['password'] + \
-    '@' + rds_secret['host'] + ':' + rds_secret['port'] + '/' + SQLALCHEMY_DATABASE_TABLE
+    '@' + rds_secret['host'] + ':' + str(rds_secret['port']) + '/' + SQLALCHEMY_DATABASE_TABLE
   SQLALCHEMY_TRACK_MODIFICATIONS = True
 
   AWS_SIGNED_REQUEST_EXPIRATION = 300  # validity of pre-signed POST requests (in seconds)
