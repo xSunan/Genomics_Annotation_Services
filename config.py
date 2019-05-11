@@ -9,6 +9,7 @@
 __author__ = 'Vas Vasiliadis <vas@uchicago.edu>'
 
 import os
+import json
 import boto3
 import base64
 from botocore.exceptions import ClientError
@@ -43,7 +44,7 @@ class Config(object):
   asm = boto3.client('secretsmanager', region_name=AWS_REGION_NAME)
   try:
     asm_response = asm.get_secret_value(SecretId='rds/accounts_database')
-    rds_secret = asm_response['SecretString']
+    rds_secret = json.loads(asm_response['SecretString'])
   except ClientError as e:
     print(f"Unable to retrieve RDS credentials from AWS Secrets Manager: {e}")
     raise e
