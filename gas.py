@@ -17,6 +17,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config.from_object(os.environ['GAS_SETTINGS'])
+app.url_map.strict_slashes = False
 
 # Configure logging
 import logging

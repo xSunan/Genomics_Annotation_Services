@@ -31,8 +31,14 @@ def create_profile(identity_id=None, name=None, email=None):
     email=email,
     institution=None
   )
-  db.session.add(profile)
-  db.session.commit()
+  try:
+    db.session.add(profile)
+    db.session.commit()
+  except:
+    app.logger.error('Failed to create user profile')
+    db.session.rollback()
+    db.session.flush()
+  return id
 
 """Gets user profile from RDS database
 """
@@ -48,7 +54,13 @@ def update_profile(identity_id=None, name=None,
   profile.email = email if email else profile.email
   profile.institution = institution if institution else profile.institution
   profile.role = role if role else profile.role
-  db.session.commit()
+  try:
+    db.session.commit()
+  except:
+    app.logger.error('Failed to update user profile')
+    db.session.rollback()
+    db.session.flush()
+  return id
 
 """Logout from Globus Auth
 """
@@ -58,16 +70,15 @@ def logout():
   client = load_portal_client()
 
   # Revoke the tokens with Globus Auth
-  for token, token_type in (
-          (token_info[ty], ty)
-          # get all of the token info dicts
-          for token_info in session['tokens'].values()
-          # cross product with the set of token types
-          for ty in ('access_token', 'refresh_token')
-          # only where the relevant token is actually present
-          if token_info[ty] is not None):
-      client.oauth2_revoke_token(
-          token, additional_params={'token_type_hint': token_type})
+  for token, token_type in ((token_info[ty], ty)
+    # Get all of the token info dicts
+    for token_info in session['tokens'].values()
+      # cross product with the set of token types
+      for ty in ('access_token', 'refresh_token')
+        # only where the relevant token is actually present
+        if token_info[ty] is not None):
+          client.oauth2_revoke_token(
+            token, additional_params={'token_type_hint': token_type})
 
   # Destroy the session state
   app.logger.info('{0} ({1}) logged out'.format(session['name'], session['primary_identity']))

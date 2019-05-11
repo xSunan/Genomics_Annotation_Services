@@ -9,6 +9,10 @@
 __author__ = 'Vas Vasiliadis <vas@uchicago.edu>'
 
 import os
+import boto3
+import base64
+from botocore.exceptions import ClientError
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Config(object):  
@@ -20,11 +24,8 @@ class Config(object):
   
   CSRF_ENABLED = True
   SECRET_KEY = os.environ['SECRET_KEY']
-  SSL_CERT_PATH = os.environ['SSL_CERT_PATH'] if ('SSL_CERT_PATH' in os.environ) else "./ssl/server_dev.crt"
-  SSL_KEY_PATH = os.environ['SSL_KEY_PATH'] if ('SSL_KEY_PATH' in os.environ) else "./ssl/server_dev.key"
-  
-  SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-  SQLALCHEMY_TRACK_MODIFICATIONS = True
+  SSL_CERT_PATH = os.environ['SSL_CERT_PATH'] if ('SSL_CERT_PATH' in os.environ) else "../ssl/server_dev.crt"
+  SSL_KEY_PATH = os.environ['SSL_KEY_PATH'] if ('SSL_KEY_PATH' in os.environ) else "../ssl/server_dev.key"
 
   GAS_HOST_IP = os.environ['GAS_HOST_IP']
   GAS_HOST_PORT = int(os.environ['GAS_HOST_PORT'])
@@ -37,6 +38,21 @@ class Config(object):
 
   AWS_PROFILE_NAME = os.environ['AWS_PROFILE_NAME'] if ('AWS_PROFILE_NAME' in  os.environ) else None
   AWS_REGION_NAME = os.environ['AWS_REGION_NAME'] if ('AWS_REGION_NAME' in  os.environ) else "us-east-1"
+
+  # Get RDS secret from AWS Secrets Manager and construct database URI
+  asm = boto3.client('secretsmanager', region_name=AWS_REGION_NAME)
+  try:
+    asm_response = client.get_secret_value(SecretId='rds/accounts_database')
+    rds_secret = asm_response['SecretString']
+  except ClientError as e:
+    print(f"Unable to retrieve RDS credentials from AWS Secrets Manager: {e}")
+    raise e
+
+  SQLALCHEMY_DATABASE_TABLE = os.environ['ACCOUNTS_DATABASE_TABLE']
+  SQLALCHEMY_DATABASE_URI = "postgresql://" + rds_secret['username'] + ':' + rds_secret['password'] + \
+    '@' + rds_secret['host'] + ':' + rds_secret['port'] + '/' + SQLALCHEMY_DATABASE_TABLE
+  SQLALCHEMY_TRACK_MODIFICATIONS = True
+
   AWS_SIGNED_REQUEST_EXPIRATION = 300  # validity of pre-signed POST requests (in seconds)
 
   AWS_S3_INPUTS_BUCKET = "gas-inputs"
@@ -63,7 +79,7 @@ class Config(object):
   # Change the email address to your username
   MAIL_DEFAULT_SENDER = "<CNetID>@ucmpcs.org"
 
-  FREE_USER_DATA_RETENTION = 1800 # time before free user results are archived (in seconds)
+  FREE_USER_DATA_RETENTION = 600 # time before free user results are archived (in seconds)
 
 class DevelopmentConfig(Config):
   DEBUG = True
