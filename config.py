@@ -42,7 +42,7 @@ class Config(object):
   # Get RDS secret from AWS Secrets Manager and construct database URI
   asm = boto3.client('secretsmanager', region_name=AWS_REGION_NAME)
   try:
-    asm_response = client.get_secret_value(SecretId='rds/accounts_database')
+    asm_response = asm.get_secret_value(SecretId='rds/accounts_database')
     rds_secret = asm_response['SecretString']
   except ClientError as e:
     print(f"Unable to retrieve RDS credentials from AWS Secrets Manager: {e}")
