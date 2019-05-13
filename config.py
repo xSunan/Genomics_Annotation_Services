@@ -60,7 +60,7 @@ class Config(object):
   AWS_S3_RESULTS_BUCKET = "gas-results"
   # Set the S3 key (object name) prefix to your CNetID
   # Keep the trailing '/' if using my upload code in views.py
-  AWS_S3_KEY_PREFIX = "<CNetID>/"
+  AWS_S3_KEY_PREFIX = "instructor/"
   AWS_S3_ACL = "private"
   AWS_S3_ENCRYPTION = "AES256"
 
@@ -71,14 +71,14 @@ class Config(object):
   AWS_SNS_JOB_COMPLETE_TOPIC = "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_results"
 
   # Change the table name to your own
-  AWS_DYNAMODB_ANNOTATIONS_TABLE = "<CNetID>_annotations"
+  AWS_DYNAMODB_ANNOTATIONS_TABLE = "instructor_annotations"
 
   # Stripe API keys
   STRIPE_PUBLIC_KEY = "<your_stripe_TEST_pulic_key>"
   STRIPE_SECRET_KEY = "<your_stripe_TEST_secret_key>"
 
   # Change the email address to your username
-  MAIL_DEFAULT_SENDER = "<CNetID>@ucmpcs.org"
+  MAIL_DEFAULT_SENDER = "instructor@ucmpcs.org"
 
   FREE_USER_DATA_RETENTION = 600 # time before free user results are archived (in seconds)
 

@@ -33,13 +33,14 @@ uploading an annotation input file using the policy document
 @authenticated
 def annotate():
   # Create a session client to the S3 service
-  session = boto3.session.Session()
-  s3 = session.client('s3', 
+  s3 = boto3.client('s3', 
     region_name=app.config['AWS_REGION_NAME'],
     config=Config(signature_version='s3v4'))
 
   bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
+  print(session)
   user_id = session['primary_identity']
+  print("HERE!!!!")
 
   # Generate unique ID to be used as S3 key (name)
   key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + str(uuid.uuid4()) + '~${filename}'
@@ -50,7 +51,6 @@ def annotate():
   # Define policy fields/conditions
   encryption = app.config['AWS_S3_ENCRYPTION']
   acl = app.config['AWS_S3_ACL']
-  expires_in = app.config['AWS_SIGNED_REQUEST_EXPIRATION']
   fields = {
     "success_action_redirect": redirect_url,
     "x-amz-server-side-encryption": encryption,
@@ -69,7 +69,7 @@ def annotate():
       Key=key_name,
       Fields=fields,
       Conditions=conditions,
-      ExpiresIn=expires_in)
+      ExpiresIn=app.config['AWS_SIGNED_REQUEST_EXPIRATION'])
   except ClientError as e:
     return jsonify({'code': 500, 'status': 'error',
       'message': f'Failed to generate presigned post: {e}'})
