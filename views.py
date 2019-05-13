@@ -38,9 +38,7 @@ def annotate():
     config=Config(signature_version='s3v4'))
 
   bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
-  print(session)
   user_id = session['primary_identity']
-  print("HERE!!!!")
 
   # Generate unique ID to be used as S3 key (name)
   key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + str(uuid.uuid4()) + '~${filename}'
