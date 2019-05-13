@@ -32,9 +32,10 @@ uploading an annotation input file using the policy document
 @app.route('/annotate', methods=['GET'])
 @authenticated
 def annotate():
-  # Open a connection to the S3 service
-  s3 = boto3.client('s3', 
-    region_name=app.config['AWS_REGION_NAME'], 
+  # Create a session client to the S3 service
+  session = boto3.session.Session()
+  s3 = session.client('s3', 
+    region_name=app.config['AWS_REGION_NAME'],
     config=Config(signature_version='s3v4'))
 
   bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
@@ -43,12 +44,10 @@ def annotate():
   # Generate unique ID to be used as S3 key (name)
   key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + str(uuid.uuid4()) + '~${filename}'
 
-  # Redirect to a route that will call the annotator
-  redirect_url = str(request.url) + "/job"
+  # Create the redirect URL
+  redirect_url = str(request.url) + '/job'
 
-  # Define policy conditions
-  # NOTE: We also must inlcude "x-amz-security-token" since we're
-  # using temporary credentials via instance roles
+  # Define policy fields/conditions
   encryption = app.config['AWS_S3_ENCRYPTION']
   acl = app.config['AWS_S3_ACL']
   expires_in = app.config['AWS_SIGNED_REQUEST_EXPIRATION']
@@ -64,8 +63,16 @@ def annotate():
   ]
 
   # Generate the presigned POST call
-  presigned_post = s3.generate_presigned_post(Bucket=bucket_name, 
-    Key=key_name, Fields=fields, Conditions=conditions, ExpiresIn=expires_in)
+  try:
+    presigned_post = s3.generate_presigned_post(
+      Bucket=bucket_name, 
+      Key=key_name,
+      Fields=fields,
+      Conditions=conditions,
+      ExpiresIn=expires_in)
+  except ClientError as e:
+    return jsonify({'code': 500, 'status': 'error',
+      'message': f'Failed to generate presigned post: {e}'})
 
   # Render the upload form which will parse/submit the presigned POST
   return render_template('annotate.html', s3_post=presigned_post)
@@ -79,9 +86,10 @@ publishes a notification for the annotator service.
 @app.route('/annotate/job', methods=['GET'])
 @authenticated
 def create_annotation_job_request():
-  # Parse redirect URL query parameters for S3 object info
-  bucket_name = request.args.get('bucket')
-  key_name = request.args.get('key')
+
+  # Get bucket name, key, and job ID from the S3 redirect URL
+  bucket_name = str(request.args.get('bucket'))
+  s3_key = str(request.args.get('key'))
 
   # Extract the job ID from the S3 key
 
