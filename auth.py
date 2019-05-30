@@ -29,7 +29,8 @@ def create_profile(identity_id=None, name=None, email=None):
     identity_id=identity_id,
     name=name,
     email=email,
-    institution=None
+    institution=None,
+    role="free_user"
   )
   try:
     db.session.add(profile)
