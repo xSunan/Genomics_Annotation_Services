@@ -119,7 +119,7 @@ def annotation_details(id):
   pass
 
 
-"""Display the log file for an annotation job
+"""Display the log file contents for an annotation job
 """
 @app.route('/annotations/<id>/log', methods=['GET'])
 @authenticated
@@ -135,6 +135,17 @@ import stripe
 @authenticated
 def subscribe():
   pass
+
+
+"""Reset subscription
+"""
+@app.route('/unsubscribe', methods=['POST'])
+@authenticated
+def unsubscribe():
+  # Hacky way to reset the user's role to a free user; simplifies testing
+  update_profile(identity_id=session['primary_identity'],
+      role="free_user")
+  return redirect(url_for('profile'))
 
 
 """DO NOT CHANGE CODE BELOW THIS LINE
