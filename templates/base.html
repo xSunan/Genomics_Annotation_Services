@@ -72,26 +72,6 @@
     <!-- Page body -->
     {% block body %}{% endblock %}
 
-    <!-- Popup dialog to confirm deletions -->
-    <div id="confirm-delete" class="modal fade" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content"> 
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-            <h3 class="modal-title" id="deleteModalLabel"><i class="fas fa-exclamation-triangle fa-lg text-warning pull-left"></i>&nbsp;{% block delete_modal_title %}{% endblock %}</h3>
-          </div>
-          <div class="modal-body">
-            {% block delete_modal_warning %}{% endblock %}&nbsp;<strong><span id="modalData1"></span></strong><br />
-            <div class="alert alert-block alert-error">{% block delete_modal_message %}{% endblock %}</div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
-            <button type="button" id="modalData2" class="btn btn-default" data-dismiss="modal">Delete</button>
-          </div>
-        </div><!-- /.modal-content -->
-      </div><!-- /.modal-dialog -->
-    </div><!-- /.modal -->
-
     <!-- Page footer -->
     {% include 'footer.html' %}
 

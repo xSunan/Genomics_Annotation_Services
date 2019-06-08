@@ -26,6 +26,6 @@ class Profile(db.Model):
   updated = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
   def __repr__(self):
-    return "<Profile(id='%s', name='%s')>" % (self.id, self.name)
+    return "<Profile(id='%s', name='%s')>" % (self.identity_id, self.name)
 
 ### EOF

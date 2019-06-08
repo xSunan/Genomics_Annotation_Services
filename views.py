@@ -69,9 +69,9 @@ def annotate():
       Conditions=conditions,
       ExpiresIn=app.config['AWS_SIGNED_REQUEST_EXPIRATION'])
   except ClientError as e:
-    return jsonify({'code': 500, 'status': 'error',
-      'message': f'Failed to generate presigned post: {e}'})
-
+    app.logger.error(f'Unable to generate presigned URL for upload: {e}')
+    return abort(500)
+    
   # Render the upload form which will parse/submit the presigned POST
   return render_template('annotate.html', s3_post=presigned_post)
 

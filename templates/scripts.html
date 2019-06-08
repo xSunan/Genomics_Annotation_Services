@@ -47,26 +47,6 @@ $(function() {
    });
 });
 
-// Displays a confirmation modal when deleting data
-$('.open-confirm-delete-modal').click(function () {
-    $('.modal-body #modalData1').html($(this).data('id1'));
-    $('.modal-footer #modalData2').attr('href', $(this).data('id2'));
-});
-$("#modalData2").click(function() {
-  var data_type = $('#data-type').attr('data-type');
-  var target_urls = {
-    'notes': "/notes/" + $("#modalData2").attr('href'),
-    'contacts': "/contacts/" + $("#modalData2").attr('href')
-  };
-  $.ajax({
-    type: "DELETE",
-    url: target_urls[data_type],
-    success: function(data, textStatus) {
-      pageUpdate(500);
-    }
-  });
-});
-
 // Manage file select control
 $(document).on('change', '.btn-file :file', function() {
   var input = $(this),
