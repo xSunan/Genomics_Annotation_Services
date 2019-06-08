@@ -1,4 +1,4 @@
-# auth.py
+# config.py
 #
 # Copyright (C) 2011-2018 Vas Vasiliadis
 # University of Chicago
