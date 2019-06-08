@@ -29,7 +29,8 @@ def create_profile(identity_id=None, name=None, email=None):
     identity_id=identity_id,
     name=name,
     email=email,
-    institution=None
+    institution=None,
+    role="free_user"
   )
   try:
     db.session.add(profile)
@@ -81,19 +82,19 @@ def logout():
             token, additional_params={'token_type_hint': token_type})
 
   # Destroy the session state
-  app.logger.info('{0} ({1}) logged out'.format(session['name'], session['primary_identity']))
+  app.logger.info(f"{session['name']} ({session['primary_identity']}) logged out")
   session.clear()
 
   redirect_uri = url_for('home', _external=True)
 
-  ga_logout_url = []
-  ga_logout_url.append(app.config['GLOBUS_AUTH_LOGOUT_URI'])
-  ga_logout_url.append('?client={}'.format(app.config['GAS_CLIENT_ID']))
-  ga_logout_url.append('&redirect_uri={}'.format(redirect_uri))
-  ga_logout_url.append('&redirect_name=Genomics Annotation Service')
+  logout_url = []
+  logout_url.append(app.config['GLOBUS_AUTH_LOGOUT_URI'])
+  logout_url.append(f"?client={app.config['GAS_CLIENT_ID']}")
+  logout_url.append(f"&redirect_uri={redirect_uri}")
+  logout_url.append("&redirect_name=Genomics Annotation Service")
 
   # Redirect the user to the Globus Auth logout page
-  return redirect(''.join(ga_logout_url))
+  return redirect(''.join(logout_url))
 
 """User profile information; assocated with a Globus Auth identity
 """
@@ -183,7 +184,7 @@ def authcallback():
       is_authenticated=True,
       name=id_token.get('name', ''),
       email=id_token.get('email', ''),
-      institution=id_token.get('institution', ''),
+      institution=id_token.get('organization', ''),
       primary_username=id_token.get('preferred_username'),
       primary_identity=id_token.get('sub'),
     )
@@ -196,7 +197,7 @@ def authcallback():
       session['institution'] = profile.institution
       session['role'] = profile.role
 
-      app.logger.info('Successful login by {0} (Globus identity: {1})'.format(profile.name, profile.identity_id))
+      app.logger.info(f"Successful login by {profile.name} (Globus identity: {profile.identity_id})")
   
       if 'next' in session:
         redirect_to = session['next']
