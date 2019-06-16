@@ -14,8 +14,9 @@ import json
 from datetime import datetime
 
 import boto3
-from botocore.client import Config
 from boto3.dynamodb.conditions import Key
+from botocore.client import Config
+from botocore.exceptions import ClientError
 
 from flask import (abort, flash, redirect, render_template, 
   request, session, url_for)
@@ -139,7 +140,7 @@ def subscribe():
 
 """Reset subscription
 """
-@app.route('/unsubscribe', methods=['POST'])
+@app.route('/unsubscribe', methods=['GET'])
 @authenticated
 def unsubscribe():
   # Hacky way to reset the user's role to a free user; simplifies testing

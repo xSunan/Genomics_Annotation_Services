@@ -8,6 +8,7 @@ __pycache__/
 *$py.class
 
 # Application data
+log/
 *.log
 *.txt
 !/*requirements.txt

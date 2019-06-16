@@ -1,6 +1,6 @@
 <!--
 profile.html - Display user account details and link to upgrade (for Free users)
-Copyright (C) 2011-2018 Vas Vasiliadis <vas@uchicago.edu>
+Copyright (C) 2011-2020 Vas Vasiliadis <vas@uchicago.edu>
 University of Chicago
 -->
 {% extends "base.html" %}
@@ -49,7 +49,7 @@ University of Chicago
         {% if session['role'] == "free_user" %}
         Free &middot; <a href="{{url_for('subscribe')}}">ugrade to Premium plan</a>
         {% else %}
-        Premium &middot; <a href="#">cancel my Premium plan</a>
+        Premium &middot; <a href="{{url_for('unsubscribe')}}">cancel my Premium plan</a>
         {% endif %}
       </p>
 

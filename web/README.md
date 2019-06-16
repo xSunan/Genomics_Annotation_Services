@@ -1,0 +1,1 @@
+This directory contains the Flask-based application for the GAS (the web front end). You will work primarily within `views.py` and with the Jinja2 templates in `/templates`.

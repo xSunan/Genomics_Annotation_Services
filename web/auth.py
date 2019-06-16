@@ -1,10 +1,15 @@
 # auth.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2019 Vas Vasiliadis
 # University of Chicago
 #
 # Manage GAS user profiles and Globus Auth integration
 #
+# ************************************************************************
+#
+# DO NOT MODIFY THIS FILE IN ANY WAY.
+#
+# ************************************************************************
 ##
 __author__ = 'Vas Vasiliadis <vas@uchicago.edu>'
 
@@ -16,7 +21,7 @@ from globus_sdk import RefreshTokenAuthorizer, ConfidentialAppAuthClient
 
 from gas import app, db
 from decorators import authenticated
-from utils import (load_portal_client, get_portal_tokens,
+from helpers import (load_portal_client, get_portal_tokens,
   get_safe_redirect)
 
 from models import Profile

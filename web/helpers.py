@@ -1,9 +1,9 @@
-# utils.py
+# helpers.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2019 Vas Vasiliadis
 # University of Chicago
 #
-# Miscellaneous utility functions
+# Miscellaneous helper functions
 #
 ##
 __author__ = 'Vas Vasiliadis <vas@uchicago.edu>'
@@ -77,25 +77,7 @@ def get_portal_tokens(scopes=['openid', 'urn:globus:auth:scope:demo-resource-ser
 
     return get_portal_tokens.access_tokens
 
-
 get_portal_tokens.lock = Lock()
 get_portal_tokens.access_tokens = None
-
-"""Send email via Amazon SES
-"""
-import boto3
-def send_email_ses(recipients=None, 
-  sender=None, subject=None, body=None):
-
-  ses = boto3.client('ses', region_name=app.config['AWS_REGION_NAME'])
-
-  response = ses.send_email(
-    Destination = {'ToAddresses': recipients},
-    Message={
-      'Body': {'Text': {'Charset': "UTF-8", 'Data': body}},
-      'Subject': {'Charset': "UTF-8", 'Data': subject},
-    },
-    Source=sender)
-  return response['ResponseMetadata']['HTTPStatusCode']
 
 ### EOF
