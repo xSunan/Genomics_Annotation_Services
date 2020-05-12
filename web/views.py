@@ -183,7 +183,7 @@ def subscribe():
 
     # Display confirmation page
     return render_template('subscribe_confirm.html', 
-      stripe_id=str(customer['id']))
+      stripe_customer_id=str(customer['id']))
 
 
 """Reset subscription

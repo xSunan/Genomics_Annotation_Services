@@ -27,7 +27,7 @@ class Config(object):
   WSGI_SERVER = 'werkzeug'
   
   CSRF_ENABLED = True
-  SECRET_KEY = os.environ['SECRET_KEY']
+
   SSL_CERT_PATH = os.environ['SSL_CERT_PATH'] \
     if ('SSL_CERT_PATH' in os.environ) else "../ssl/server_dev.crt"
   SSL_KEY_PATH = os.environ['SSL_KEY_PATH'] \
@@ -37,18 +37,25 @@ class Config(object):
   GAS_HOST_PORT = int(os.environ['GAS_HOST_PORT'])
   GAS_APP_HOST = os.environ['GAS_APP_HOST']
   GAS_SERVER_NAME = f"{os.environ['GAS_HOST_IP']}:{os.environ['GAS_HOST_PORT']}"
-  
-  GAS_CLIENT_ID = os.environ['GAS_CLIENT_ID']
-  GAS_CLIENT_SECRET = os.environ['GAS_CLIENT_SECRET']
-  GLOBUS_AUTH_LOGOUT_URI = "https://auth.globus.org/v2/web/logout"
 
   AWS_PROFILE_NAME = os.environ['AWS_PROFILE_NAME'] \
     if ('AWS_PROFILE_NAME' in  os.environ) else None
   AWS_REGION_NAME = os.environ['AWS_REGION_NAME'] \
     if ('AWS_REGION_NAME' in  os.environ) else "us-east-1"
 
-  # Get RDS secret from AWS Secrets Manager and construct database URI
+  # Get various credentials from AWS Secrets Manager
   asm = boto3.client('secretsmanager', region_name=AWS_REGION_NAME)
+
+  # Get Flask application secret
+  try:
+    asm_response = asm.get_secret_value(SecretId='gas/web_server')
+    flask_secret = json.loads(asm_response['SecretString'])
+  except ClientError as e:
+    print(f"Unable to retrieve Flask secret from ASM: {e}")
+    raise e
+  SECRET_KEY = flask_secret['flask_secret_key ']
+
+  # Get RDS secret and construct database URI
   try:
     asm_response = asm.get_secret_value(SecretId='rds/accounts_database')
     rds_secret = json.loads(asm_response['SecretString'])
@@ -62,6 +69,19 @@ class Config(object):
     '@' + rds_secret['host'] + ':' + str(rds_secret['port']) + \
     '/' + SQLALCHEMY_DATABASE_TABLE
   SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+  # Get the Globus Auth client ID and secret
+  try:
+    asm_response = asm.get_secret_value(SecretId='globus/auth_client')
+    globus_auth = json.loads(asm_response['SecretString'])
+  except ClientError as e:
+    print(f"Unable to retrieve Globus Auth credentials from ASM: {e}")
+    raise e
+
+  # Set the Globus Auth client ID and secret
+  GAS_CLIENT_ID = globus_auth['gas_client_id']
+  GAS_CLIENT_SECRET = globus_auth['gas_client_secret']
+  GLOBUS_AUTH_LOGOUT_URI = "https://auth.globus.org/v2/web/logout"
 
   # Get the Stripe API credentials from ASM
   try:
