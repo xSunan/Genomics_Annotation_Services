@@ -25,13 +25,7 @@ class Config(object):
     if ('GAS_LOG_FILE_NAME' in os.environ) else "gas.log"
 
   WSGI_SERVER = 'werkzeug'
-  
   CSRF_ENABLED = True
-
-  SSL_CERT_PATH = os.environ['SSL_CERT_PATH'] \
-    if ('SSL_CERT_PATH' in os.environ) else "../ssl/server_dev.crt"
-  SSL_KEY_PATH = os.environ['SSL_KEY_PATH'] \
-    if ('SSL_KEY_PATH' in os.environ) else "../ssl/server_dev.key"
 
   GAS_HOST_IP = os.environ['GAS_HOST_IP']
   GAS_HOST_PORT = int(os.environ['GAS_HOST_PORT'])
@@ -53,7 +47,7 @@ class Config(object):
   except ClientError as e:
     print(f"Unable to retrieve Flask secret from ASM: {e}")
     raise e
-  SECRET_KEY = flask_secret['flask_secret_key ']
+  SECRET_KEY = flask_secret['flask_secret_key']
 
   # Get RDS secret and construct database URI
   try:
