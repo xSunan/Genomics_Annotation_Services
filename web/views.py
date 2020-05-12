@@ -45,7 +45,8 @@ def annotate():
   user_id = session['primary_identity']
 
   # Generate unique ID to be used as S3 key (name)
-  key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + str(uuid.uuid4()) + '~${filename}'
+  key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + \
+    str(uuid.uuid4()) + '~${filename}'
 
   # Create the redirect URL
   redirect_url = str(request.url) + '/job'
@@ -141,7 +142,48 @@ import stripe
 @app.route('/subscribe', methods=['GET', 'POST'])
 @authenticated
 def subscribe():
-  pass
+  region = app.config['AWS_REGION_NAME']
+
+  if (request.method == 'GET'):
+    # Display form to get subscriber credit card info
+    if (session.get('role') == "free_user"):
+      return render_template('subscribe.html')
+    else:
+      return redirect(url_for('profile'))
+
+  elif (request.method == 'POST'):
+    # Process the subscription request
+    token = str(request.form['stripe_token']).strip()
+
+    # Create a customer on Stripe
+    stripe.api_key = app.config['STRIPE_SECRET_KEY']
+    try:
+      customer = stripe.Customer.create(
+        card = token,
+        plan = "premium_plan",
+        email = session.get('email'),
+        description = session.get('name')
+      )
+    except Exception as e:
+      app.logger.error(f"Failed to create customer billing record: {e}")
+      return abort(500)
+
+    # Update user role to allow access to paid features
+    update_profile(
+      identity_id=session['primary_identity'],
+      role="premium_user"
+    )
+
+    # Update role in the session
+    session['role'] = "premium_user"
+
+    # Request restoration of the user's data from Glacier
+    # Add code here to initiate restoration of archived user data
+    # Make sure you handle files not yet archived!
+
+    # Display confirmation page
+    return render_template('subscribe_confirm.html', 
+      stripe_id=str(customer['id']))
 
 
 """Reset subscription
@@ -150,8 +192,10 @@ def subscribe():
 @authenticated
 def unsubscribe():
   # Hacky way to reset the user's role to a free user; simplifies testing
-  update_profile(identity_id=session['primary_identity'],
-      role="free_user")
+  update_profile(
+    identity_id=session['primary_identity'],
+    role="free_user"
+  )
   return redirect(url_for('profile'))
 
 
@@ -170,7 +214,7 @@ def home():
 @app.route('/login', methods=['GET'])
 def login():
   app.logger.info('Login attempted from IP {0}'.format(request.remote_addr))
-  # If user requested a specific page, save it to session for redirect after authentication
+  # If user requested a specific page, save it session for redirect after auth
   if (request.args.get('next')):
     session['next'] = request.args.get('next')
   return redirect(url_for('authcallback'))
@@ -181,7 +225,9 @@ def login():
 def page_not_found(e):
   return render_template('error.html', 
     title='Page not found', alert_level='warning',
-    message="The page you tried to reach does not exist. Please check the URL and try again."), 404
+    message="The page you tried to reach does not exist. \
+      Please check the URL and try again."
+    ), 404
 
 """403 error handler
 """
@@ -189,7 +235,10 @@ def page_not_found(e):
 def forbidden(e):
   return render_template('error.html',
     title='Not authorized', alert_level='danger',
-    message="You are not authorized to access this page. If you think you deserve to be granted access, please contact the supreme leader of the mutating genome revolutionary party."), 403
+    message="You are not authorized to access this page. \
+      If you think you deserve to be granted access, please contact the \
+      supreme leader of the mutating genome revolutionary party."
+    ), 403
 
 """405 error handler
 """
@@ -197,7 +246,9 @@ def forbidden(e):
 def not_allowed(e):
   return render_template('error.html',
     title='Not allowed', alert_level='warning',
-    message="You attempted an operation that's not allowed; get your act together, hacker!"), 405
+    message="You attempted an operation that's not allowed; \
+      get your act together, hacker!"
+    ), 405
 
 """500 error handler
 """
@@ -205,6 +256,8 @@ def not_allowed(e):
 def internal_error(error):
   return render_template('error.html',
     title='Server error', alert_level='danger',
-    message="The server encountered an error and could not process your request."), 500
+    message="The server encountered an error and could \
+      not process your request."
+    ), 500
 
 ### EOF
