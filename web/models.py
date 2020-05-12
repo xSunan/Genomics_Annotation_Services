@@ -1,6 +1,6 @@
 # models.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Database models
@@ -17,7 +17,8 @@ from sqlalchemy.sql import func
 class Profile(db.Model):
   __tablename__ = 'profiles'
 
-  identity_id = db.Column(UUID(as_uuid=True), primary_key=True)   # This is the Globus Auth identity UUID
+  # Globus Auth identity UUID
+  identity_id = db.Column(UUID(as_uuid=True), primary_key=True)
   name = db.Column(db.String(256))
   email = db.Column(db.String(256))
   institution = db.Column(db.String(256))

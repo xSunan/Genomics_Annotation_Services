@@ -1,6 +1,6 @@
 # views.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Application logic for the GAS
@@ -74,7 +74,7 @@ def annotate():
       Conditions=conditions,
       ExpiresIn=app.config['AWS_SIGNED_REQUEST_EXPIRATION'])
   except ClientError as e:
-    app.logger.error(f'Unable to generate presigned URL for upload: {e}')
+    app.logger.error(f"Unable to generate presigned URL for upload: {e}")
     return abort(500)
     
   # Render the upload form which will parse/submit the presigned POST
@@ -142,8 +142,6 @@ import stripe
 @app.route('/subscribe', methods=['GET', 'POST'])
 @authenticated
 def subscribe():
-  region = app.config['AWS_REGION_NAME']
-
   if (request.method == 'GET'):
     # Display form to get subscriber credit card info
     if (session.get('role') == "free_user"):
@@ -213,7 +211,7 @@ def home():
 """
 @app.route('/login', methods=['GET'])
 def login():
-  app.logger.info('Login attempted from IP {0}'.format(request.remote_addr))
+  app.logger.info(f"Login attempted from IP {request.remote_addr}")
   # If user requested a specific page, save it session for redirect after auth
   if (request.args.get('next')):
     session['next'] = request.args.get('next')

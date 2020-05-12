@@ -1,6 +1,6 @@
 # decorators.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Decorators for the GAS

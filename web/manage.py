@@ -1,6 +1,6 @@
 # manage.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Utilities for managing Flask project

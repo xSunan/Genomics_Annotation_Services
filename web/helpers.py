@@ -1,6 +1,6 @@
 # helpers.py
 #
-# Copyright (C) 2011-2019 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Miscellaneous helper functions
@@ -34,7 +34,8 @@ def load_portal_client():
 def is_safe_redirect_url(target):    
   host_url = urlparse(request.host_url)
   redirect_url = urlparse(urljoin(request.host_url, target))
-  return redirect_url.scheme in ('http', 'https') and host_url.netloc == redirect_url.netloc
+  return (redirect_url.scheme in ('http', 'https')) 
+    and (host_url.netloc == redirect_url.netloc)
 
 """https://security.openstack.org/guidelines/dg_avoid-unvalidated-redirects.html
 """
@@ -53,7 +54,12 @@ def get_safe_redirect():
 Uses the client_credentials grant to get access tokens 
 on the GAS's "client identity"
 """
-def get_portal_tokens(scopes=['openid', 'urn:globus:auth:scope:demo-resource-server:all']):
+def get_portal_tokens(scopes=None):
+  scopes = scopes or 
+    [
+      'openid',
+      'urn:globus:auth:scope:demo-resource-server:all'
+    ]
   with get_portal_tokens.lock:
     if not get_portal_tokens.access_tokens:
       get_portal_tokens.access_tokens = {}
@@ -61,7 +67,9 @@ def get_portal_tokens(scopes=['openid', 'urn:globus:auth:scope:demo-resource-ser
     scope_string = ' '.join(scopes)
 
     client = load_portal_client()
-    tokens = client.oauth2_client_credentials_tokens(requested_scopes=scope_string)
+    tokens = client.oauth2_client_credentials_tokens(
+      requested_scopes=scope_string
+    )
 
     # Walk all resource servers in the token response (includes the
     # top-level server, as found in tokens.resource_server), and store the

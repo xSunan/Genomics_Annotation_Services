@@ -27,6 +27,11 @@ class Config(object):
   WSGI_SERVER = 'werkzeug'
   CSRF_ENABLED = True
 
+  SSL_CERT_PATH = os.environ['SSL_CERT_PATH'] \
+    if ('SSL_CERT_PATH' in os.environ) else "ssl/ucmpcs.org.crt"
+  SSL_KEY_PATH = os.environ['SSL_KEY_PATH'] \
+    if ('SSL_KEY_PATH' in os.environ) else "ssl/ucmpcs.org.key"
+
   GAS_HOST_IP = os.environ['GAS_HOST_IP']
   GAS_HOST_PORT = int(os.environ['GAS_HOST_PORT'])
   GAS_APP_HOST = os.environ['GAS_APP_HOST']
@@ -103,8 +108,10 @@ class Config(object):
   AWS_GLACIER_VAULT = "ucmpcs"
 
   # Change the ARNs below to reflect your SNS topics
-  AWS_SNS_JOB_REQUEST_TOPIC = "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_requests"
-  AWS_SNS_JOB_COMPLETE_TOPIC = "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_results"
+  AWS_SNS_JOB_REQUEST_TOPIC = 
+    "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_requests"
+  AWS_SNS_JOB_COMPLETE_TOPIC = 
+    "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_results"
 
   # Change the table name to your own
   AWS_DYNAMODB_ANNOTATIONS_TABLE = "<CNetID>_annotations"
@@ -113,7 +120,7 @@ class Config(object):
   MAIL_DEFAULT_SENDER = "<CNetID>@ucmpcs.org"
 
   # Time before free user results are archived (in seconds)
-  FREE_USER_DATA_RETENTION = 600
+  FREE_USER_DATA_RETENTION = 300
 
 class DevelopmentConfig(Config):
   DEBUG = True
