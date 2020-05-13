@@ -57,7 +57,7 @@ Uses the client_credentials grant to get access tokens
 on the GAS's "client identity"
 """
 def get_portal_tokens(scopes=None):
-  scopes = scopes or 
+  scopes = scopes or \
     ['openid','urn:globus:auth:scope:demo-resource-server:all']
   with get_portal_tokens.lock:
     if not get_portal_tokens.access_tokens:
