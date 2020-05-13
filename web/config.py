@@ -1,6 +1,6 @@
 # config.py
 #
-# Copyright (C) 2011-2018 Vas Vasiliadis
+# Copyright (C) 2011-2020 Vas Vasiliadis
 # University of Chicago
 #
 # Set GAS configuration options based on environment
