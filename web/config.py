@@ -108,9 +108,9 @@ class Config(object):
   AWS_GLACIER_VAULT = "ucmpcs"
 
   # Change the ARNs below to reflect your SNS topics
-  AWS_SNS_JOB_REQUEST_TOPIC = 
+  AWS_SNS_JOB_REQUEST_TOPIC = \
     "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_requests"
-  AWS_SNS_JOB_COMPLETE_TOPIC = 
+  AWS_SNS_JOB_COMPLETE_TOPIC = \
     "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_results"
 
   # Change the table name to your own
