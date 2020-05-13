@@ -56,10 +56,7 @@ on the GAS's "client identity"
 """
 def get_portal_tokens(scopes=None):
   scopes = scopes or 
-    [
-      'openid',
-      'urn:globus:auth:scope:demo-resource-server:all'
-    ]
+    ['openid','urn:globus:auth:scope:demo-resource-server:all']
   with get_portal_tokens.lock:
     if not get_portal_tokens.access_tokens:
       get_portal_tokens.access_tokens = {}
