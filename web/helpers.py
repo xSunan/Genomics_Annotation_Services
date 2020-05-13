@@ -27,7 +27,9 @@ from gas import app, db
 """
 def load_portal_client():
   return globus_sdk.ConfidentialAppAuthClient(
-    app.config['GAS_CLIENT_ID'], app.config['GAS_CLIENT_SECRET'])
+    app.config['GAS_CLIENT_ID'],
+    app.config['GAS_CLIENT_SECRET']
+  )
 
 """https://security.openstack.org/guidelines/dg_avoid-unvalidated-redirects.html
 """
