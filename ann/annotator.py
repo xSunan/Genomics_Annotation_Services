@@ -20,7 +20,7 @@ def create_job():
     # Connect to SQS and get the message queue, and connect to s3
     try:
         sqs = boto3.client('sqs', region_name='us-east-1')
-        queue_url = config['aws']['SqsURL']
+        queue_url = config['aws']['SQS_REQUESTS_URL']
         s3 = boto3.resource('s3')
     except boto3.exceptions.ResourceNotExistsError as e:
         print(e)

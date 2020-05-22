@@ -76,7 +76,7 @@ def upload_result(file_name):
         shutil.rmtree("./{}/{}".format(username,job_id))
     except FileNotFoundError as e:
         print(e)
-    return log_key, annot_key, job_id
+    return log_key, annot_key, job_id,username
 
 if __name__ == '__main__':
     # Call the AnnTools pipeline
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             complete_time = int(time.time())
 
         # upload the log and count file to gas-results
-        log_key, annot_key,job_id = upload_result(file_name)
+        log_key, annot_key,job_id,username = upload_result(file_name)
 
         # obtain the config
         config = ConfigParser()
@@ -134,6 +134,38 @@ if __name__ == '__main__':
                 print(e.response['Error']['Message'])
             except:
                 print("Unexpected error")
+
+            # connect to the sns and topic
+            try:
+                sns = boto3.resource('sns', region_name='us-east-1')
+                topic_result_name = config['aws']['SNS_Result_TOPIC']
+                topic = sns.Topic(topic_result_name)
+            except (botocore.errorfactory.NotFoundException, botocore.errorfactory.InvalidParameterException, \
+                boto3.exceptions.ResourceNotExistsError) as e:
+                print(e)
+                exit(1)
+
+            # construct the notification
+            notification = { 
+                "job_id": job_id,
+                "user_id": username,
+                "input_file_name":input_file,
+                "s3_results_bucket": config['aws']['AWS_S3_RESULTS_BUCKET'],
+                "s3_key_log_file": log_key,
+                "s3_key_annot_file": annot_key,
+                "completed_time":ep_time,
+            }
+
+            # publish a notification message to SNS topic when job is complete
+            try:
+                response = topic.publish(
+                    Message= json.dumps(notification),
+                    MessageStructure='String',
+                )
+            except (botocore.exceptions.ParamValidationError,botocore.exceptions.ClientError) as e:
+                print(e)
+                exit(1)
+
         else :
             # update the status to error
             try:
