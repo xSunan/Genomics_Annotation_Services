@@ -117,7 +117,7 @@ def create_job():
 
             # Launch annotation job as a background process
             try:           
-                execFile = "./anntools/run.py"
+                execFile = "./run.py"
                 job = Popen(["python", execFile, filename])
             except (FileNotFoundError, ValueError, OSError) as e:
                 print(e)

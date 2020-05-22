@@ -129,14 +129,11 @@ if __name__ == '__main__':
 
                 )
             except botocore.errorfactory.ConditionalCheckFailedException as e:
-                print("Doesn't meet the ConditionExpressions")
-                return 
+                print("Doesn't meet the ConditionExpressions") 
             except botocore.exceptions.ClientError as e:
                 print(e.response['Error']['Message'])
-                return
             except:
                 print("Unexpected error")
-                return
         else :
             # update the status to error
             try:
@@ -154,13 +151,10 @@ if __name__ == '__main__':
                 )
             except botocore.errorfactory.ConditionalCheckFailedException as e:
                 print("Doesn't meet the ConditionExpressions")
-                return
             except botocore.exceptions.ClientError as e:
                 print(e.response['Error']['Message'])
-                return
             except:
                 print("Unexpected error")
-                return
 
     else:
         print("A valid .vcf file must be provided as input to this program.")
