@@ -15,11 +15,12 @@ from datetime import datetime
 
 import boto3
 from boto3.dynamodb.conditions import Key
+import botocore
 from botocore.client import Config
 from botocore.exceptions import ClientError
 
 from flask import (abort, flash, redirect, render_template, 
-    request, session, url_for)
+    request, session, url_for, jsonify)
 
 from gas import app, db
 from decorators import authenticated, is_premium
@@ -43,11 +44,11 @@ def annotate():
 
     bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
     user_id = session['primary_identity']
-    print(user_id)
+    # print(user_id)
     # Generate unique ID to be used as S3 key (name)
     key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + \
         str(uuid.uuid4()) + '~${filename}'
-
+    print(key_name)
     # Create the redirect URL
     redirect_url = str(request.url) + '/job'
 
@@ -99,20 +100,21 @@ def create_annotation_job_request():
 
     # Extract the job ID from the S3 key
     try:
-        info = key.split("/")
+        info = s3_key.split("/")
         user = info[1]
         file = info[2]
         job_id = file.split("~")[0]
-        input_file = key.split("~")[1]
+        input_file = s3_key.split("~")[1]
     except IndexError:
-        # response = generate_error(500,"No enough information")
-        # return jsonify(response), 500
-        return abort(500)
+        response = generate_error(500,"No enough information")
+        return jsonify(response), 500
+        # return abort(500)
     except:
-        # response = generate_error(500,"No enough information")
-        # return jsonify(response), 500
-        abort(500)
+        response = generate_error(500,"No enough information")
+        return jsonify(response), 500
+        # abort(500)
 
+    print("extract succ")
     # Persist job to database
 
     # connect to the dynamodb resource
@@ -121,9 +123,9 @@ def create_annotation_job_request():
         table_name = app.config['AWS_DYNAMODB_ANNOTATIONS_TABLE']
         ann_table = dynamodb.Table(table_name)
     except boto3.exceptions.ResourceNotExistsError as e:
-        # response = generate_error(500,"ResourceNotExistsError")
-        # return jsonify(response), 500
-        return abort(500)
+        response = generate_error(500,"ResourceNotExistsError")
+        return jsonify(response), 500
+        # return abort(500)
     except botocore.exceptions.ClientError as e:
         response = generate_error(500,"ClientError")
         return jsonify(response), 500
@@ -133,8 +135,8 @@ def create_annotation_job_request():
         "job_id": job_id,
         "user_id": user,
         "input_file_name":input_file,
-        "s3_inputs_bucket": bucket,
-        "s3_key_input_file": key,
+        "s3_inputs_bucket": bucket_name,
+        "s3_key_input_file": s3_key,
         "submit_time":ep_time,
         "job_status": "PENDING"
     }
@@ -162,7 +164,8 @@ def create_annotation_job_request():
 
     try:
         # topic = sns.Topic('arn:aws:sns:us-east-1:127134666975:xsunan_job_requests')
-        topic = app.config['AWS_SNS_JOB_REQUEST_TOPIC']
+        topic_name = app.config['AWS_SNS_JOB_REQUEST_TOPIC']
+        topic = sns.Topic(topic_name)
     except (botocore.errorfactory.NotFoundException, botocore.errorfactory.InvalidParameterException) as e:
         # response = generate_error(500, e)
         # return jsonify(response), 500
@@ -333,4 +336,15 @@ def internal_error(error):
             not process your request."
         ), 500
 
+    
+def generate_error(status_code,e):
+    '''
+    construct response for errors
+    '''
+    response_body = {
+        "code": status_code,
+        "status": "error",
+        "message": str(e)
+    }
+    return response_body
 ### EOF
