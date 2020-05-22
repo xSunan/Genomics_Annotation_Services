@@ -101,7 +101,7 @@ class Config(object):
   AWS_S3_RESULTS_BUCKET = "gas-results"
   # Set the S3 key (object name) prefix to your CNetID
   # Keep the trailing '/' if using my upload code in views.py
-  AWS_S3_KEY_PREFIX = "<CNetID>/"
+  AWS_S3_KEY_PREFIX = "xsunan/"
   AWS_S3_ACL = "private"
   AWS_S3_ENCRYPTION = "AES256"
 
@@ -109,15 +109,15 @@ class Config(object):
 
   # Change the ARNs below to reflect your SNS topics
   AWS_SNS_JOB_REQUEST_TOPIC = \
-    "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_requests"
+    "arn:aws:sns:us-east-1:127134666975:xsunan_job_requests"
   AWS_SNS_JOB_COMPLETE_TOPIC = \
-    "arn:aws:sns:us-east-1:127134666975:<CNetID>_job_results"
+    "arn:aws:sns:us-east-1:127134666975:xsunan_job_results"
 
   # Change the table name to your own
-  AWS_DYNAMODB_ANNOTATIONS_TABLE = "<CNetID>_annotations"
+  AWS_DYNAMODB_ANNOTATIONS_TABLE = "xsunan_annotations"
 
   # Change the email address to your username
-  MAIL_DEFAULT_SENDER = "<CNetID>@ucmpcs.org"
+  MAIL_DEFAULT_SENDER = "xsunan@ucmpcs.org"
 
   # Time before free user results are archived (in seconds)
   FREE_USER_DATA_RETENTION = 300

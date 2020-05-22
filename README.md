@@ -6,3 +6,11 @@ Directory contents are as follows:
 * `/ann` - Annotator files
 * `/util` - Utility scripts for notifications, archival, and restoration
 * `/aws` - AWS user data files
+
+
+
+
+
+# References:
+
+1. configParser: https://docs.python.org/3/library/configparser.html
