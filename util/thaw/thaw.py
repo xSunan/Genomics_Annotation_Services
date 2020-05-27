@@ -48,7 +48,7 @@ def monitor_job():
             )
         except botocore.errorfactory.QueueDoesNotExist as e:
             print(e)
-            continue;
+            continue
 
         
         try:
@@ -58,10 +58,10 @@ def monitor_job():
         except KeyError:
             continue
 
-        print(len(messages))
+        # print(len(messages))
 
         for message in messages:
-            print(message)
+            # print(message)
             content = json.loads(message['Body'])
             receipt_handle = message['ReceiptHandle']
             # delete_message(sqs,queue_url,receipt_handle)
@@ -80,8 +80,6 @@ def monitor_job():
 
             # connect to glacier
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
-            # handle_result = threading.Thread(target = handle_result_file, args = (glacier, job_id,s3_result_key, ))
-            # handle_result.start()
             job_resp = glacier.get_job_output(vaultName=config['aws']['VAULT_NAME'],
                     jobId=restore_job_id)
             file_content = job_resp['body']
@@ -126,24 +124,6 @@ def delete_message(sqs,queue_url,receipt_handle):
         )
     except (boto3.exceptions.ClientError,SQS.Client.exceptions.InvalidIdFormat, SQS.Client.exceptions.ReceiptHandleIsInvalid) as e:
         print(e)
-
-
-            
-# def handle_result_file(glacier,job_id,s3_result_key):
-#     while True:
-#         status = glacier.describe_job(vaultName=config['aws']['VAULT_NAME'],
-#                         jobId=job_id)
-#         if status['Completed']:
-#             break
-#         time.sleep(300)
-    
-#     job_resp = glacier.get_job_output(vaultName=config['aws']['VAULT_NAME'],
-#             jobId=job_id)
-#     file_content = job_resp['body']
-#     print("startupload: "+s3_result_key)
-#     #upload to the s3
-#     s3 = boto3.client('s3',region_name=config['aws']['AwsRegionName'])
-#     s3.upload_fileobj(file_content, config['aws']['AWS_S3_RESULTS_BUCKET'], s3_result_key)
 
 
 if __name__=='__main__':

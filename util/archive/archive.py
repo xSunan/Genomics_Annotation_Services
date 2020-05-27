@@ -47,7 +47,7 @@ def relocate_result():
             )
         except botocore.errorfactory.QueueDoesNotExist as e:
             print(e)
-            continue;
+            continue
 
         try:
             messages = result_response['Messages']
@@ -64,7 +64,7 @@ def relocate_result():
 
             # check if the user is still a free user
             if profile['role'] == "premium_user":
-                print("premium")
+                # print("premium")
                 delete_message(sqs, queue_url, receipt_handle)
                 continue
 

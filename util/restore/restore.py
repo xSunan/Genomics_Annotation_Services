@@ -55,9 +55,9 @@ def initiate_restore():
                 continue
         except KeyError:
             continue
-        print(len(messages))
+        # print(len(messages))
         for message in messages:
-            print(message)
+            # print(message)
             content = json.loads(message['Body'])
             receipt_handle = message['ReceiptHandle']
             data = json.loads(content['Message'])
@@ -65,7 +65,7 @@ def initiate_restore():
             user_id = data['user_id'] 
 
             archives = get_user_archive(user_id)
-            print("here")
+            # print("here")
             # connect to glacier
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
             # initiate restore job
@@ -101,7 +101,7 @@ def initiate_restore():
                     jobId=response['jobId'])
                 print(status)
 
-            # delete_message(sqs,queue_url,receipt_handle)
+            delete_message(sqs,queue_url,receipt_handle)
             
 
 
