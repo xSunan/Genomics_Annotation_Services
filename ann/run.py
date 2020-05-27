@@ -13,6 +13,7 @@ import time
 import driver
 from boto3.dynamodb.conditions import Key
 import boto3
+import json
 import time
 import os
 import shutil
@@ -48,7 +49,7 @@ def upload_result(file_name):
     s3 = boto3.resource('s3')
     bucket = config['aws']['AWS_S3_RESULTS_BUCKET']
     try:
-        username = file_name.split("/")[1]
+        user_id = file_name.split("/")[1]
         prefix = file_name[2:len(file_name)-4]
         job_id = file_name.split("/")[2]
         suffix = prefix.split("/")[2]
@@ -57,12 +58,21 @@ def upload_result(file_name):
       print("File name not valid\n"+e)
       return
     
+    # load user related info
+    # user_info_file = "{}/{}/user_info.txt".format(user_id, job_id)
+    # print(user_info_file)
+    # with open(user_info_file,"r") as f:
+    #     user_info = json.load(f)
+    #     user_name = user_info['name']
+    #     user_email = user_info['email']
+    #     print(user_name, user_email)
+     
     #upload the final output to s3
     s3_prefix = config['aws']['AWS_S3_KEY_PREFIX']
     annot_file = '{}.annot.vcf'.format(prefix)
     log_file = '{}.vcf.count.log'.format(prefix)
-    annot_key = '{}{}/{}.annot.vcf'.format(s3_prefix,username,suffix)
-    log_key = '{}{}/{}.vcf.count.log'.format(s3_prefix,username,suffix)
+    annot_key = '{}{}/{}.annot.vcf'.format(s3_prefix,user_id,suffix)
+    log_key = '{}{}/{}.vcf.count.log'.format(s3_prefix,user_id,suffix)
     
     try:
         s3.meta.client.upload_file(annot_file, bucket, annot_key)
@@ -73,10 +83,11 @@ def upload_result(file_name):
 
     # delete the output file in instance
     try:
-        shutil.rmtree("./{}/{}".format(username,job_id))
+        shutil.rmtree("./{}/{}".format(user_id,job_id))
     except FileNotFoundError as e:
         print(e)
-    return log_key, annot_key, job_id,username
+    # return log_key, annot_key, job_id,user_id,user_name,user_email
+    return log_key, annot_key, job_id,user_id
 
 if __name__ == '__main__':
     # Call the AnnTools pipeline
@@ -91,7 +102,7 @@ if __name__ == '__main__':
             complete_time = int(time.time())
 
         # upload the log and count file to gas-results
-        log_key, annot_key,job_id,username = upload_result(file_name)
+        log_key, annot_key, job_id,user_id = upload_result(file_name)
 
         # obtain the config
         config = ConfigParser()
@@ -138,28 +149,48 @@ if __name__ == '__main__':
             # connect to the sns and topic
             try:
                 sns = boto3.resource('sns', region_name='us-east-1')
-                topic_result_name = config['aws']['SNS_Result_TOPIC']
-                topic = sns.Topic(topic_result_name)
+                topic_result_name = config['aws']['SNS_RESULT_TOPIC']
+                topic_archive_name = config['aws']['SNS_ARCHIVE_TOPIC']
+                topic_result = sns.Topic(topic_result_name)
+                topic_archive = sns.Topic(topic_archive_name)
             except (botocore.errorfactory.NotFoundException, botocore.errorfactory.InvalidParameterException, \
                 boto3.exceptions.ResourceNotExistsError) as e:
                 print(e)
                 exit(1)
 
+
+            ep_time = int(time.time())
             # construct the notification
-            notification = { 
+            result_notification = { 
                 "job_id": job_id,
-                "user_id": username,
-                "input_file_name":input_file,
+                "user_id": user_id,
+                # "user_name": user_name,
+                # "user_email": user_email,
                 "s3_results_bucket": config['aws']['AWS_S3_RESULTS_BUCKET'],
                 "s3_key_log_file": log_key,
                 "s3_key_annot_file": annot_key,
                 "completed_time":ep_time,
             }
 
-            # publish a notification message to SNS topic when job is complete
+            archive_notification = {
+                "job_id": job_id,
+                "user_id": user_id,
+                # "user_name": user_name,
+                # "user_email": user_email,
+                "s3_results_bucket": config['aws']['AWS_S3_RESULTS_BUCKET'],
+                "s3_key_log_file": log_key,
+                "s3_key_annot_file": annot_key,
+                "completed_time":ep_time,
+            }
+
+            # publish a notification message to job_result and result_archive SNS when job is complete
             try:
-                response = topic.publish(
-                    Message= json.dumps(notification),
+                result_response = topic_result.publish(
+                    Message= json.dumps(result_notification),
+                    MessageStructure='String',
+                )
+                archive_response = topic_archive.publish(
+                    Message= json.dumps(archive_notification),
                     MessageStructure='String',
                 )
             except (botocore.exceptions.ParamValidationError,botocore.exceptions.ClientError) as e:

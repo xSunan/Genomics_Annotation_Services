@@ -112,7 +112,8 @@ class Config(object):
     "arn:aws:sns:us-east-1:127134666975:xsunan_job_requests"
   AWS_SNS_JOB_COMPLETE_TOPIC = \
     "arn:aws:sns:us-east-1:127134666975:xsunan_job_results"
-
+  AWS_SNS_RESTORE_TOPIC = \
+    "arn:aws:sns:us-east-1:127134666975:xsunan_restore"
   # Change the table name to your own
   AWS_DYNAMODB_ANNOTATIONS_TABLE = "xsunan_annotations"
 

@@ -67,7 +67,9 @@ def create_job():
                 body = json.loads(content)
                 data = json.loads(body['Message'])
                 job_id = data['job_id']
-                username = data['user_id']
+                user_id = data['user_id']
+                # email = data['user_email']
+                # name = data['user_name']
                 key = data['s3_key_input_file']
                 bucket = data['s3_inputs_bucket']
                 submit_time = data['submit_time']
@@ -85,16 +87,26 @@ def create_job():
                 ReceiptHandle = receipt_handle
             )
             # prepare the file directory for the job
-            if not os.path.isdir("./{}/".format(username)):
-                os.mkdir("./{}/".format(username))
+            if not os.path.isdir("./{}/".format(user_id)):
+                os.mkdir("./{}/".format(user_id))
 
-            dst = './{}/{}/'.format(username,job_id)
+            dst = './{}/{}/'.format(user_id,job_id)
 
             try:
                 os.mkdir(dst)
             except FileExistsError as e:
                 print(e)
 
+            # # record the user related info in the folder
+            # user_info = {
+            #     "email": email,
+            #     "name": name
+            # }
+            # user_info_file = dst+"user_info.txt"
+            # print(user_info_file)
+            # with open(user_info_file, "w+") as f:
+            #     print("write user_info_file")
+            #     json.dump(user_info, f)
             # filter out and download the file in s3 bucket
             try:
                 folder = s3.Bucket(bucket)
