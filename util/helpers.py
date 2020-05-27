@@ -35,6 +35,7 @@ def send_email_ses(recipients=None,
         'Subject': {'Charset': "UTF-8", 'Data': subject},
       },
       Source=(sender or config['gas']['EmailDefaultSender']))
+    print("send email")
   except ClientError as e:
     raise ClientError
 
