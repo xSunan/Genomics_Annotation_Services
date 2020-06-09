@@ -11,15 +11,23 @@ Directory contents are as follows:
 
 1. Initiate a SNS topic xsunan_results_archive and in run.py publish a message when the job is completed
 2. Initiate a SQS named: xsunan_results_archive which subscribe the sns topic xsunan_results_archive. And set the property: delivery delay to 5 minutes, so that the message will be released 5 minutes after the job is completed.
-3. In archive.py, accept the message in xsunan_results_archive queue. When a message is received, it means that it was just completed 5 minutes ago. Right at this time, the result of this job should be archived to the Glacier, and the result file in S3 should be deleted
+3. In archive.py, accept the message in xsunan_results_archive queue. When a message is received, it means that it was just completed 5 minutes ago. 
+   1. Firstly, we need to check if the user is still a free user, in case the user has subscribed after the job is requested
+   2. Right at this time, the result of this job should be archived to the Glacier, and the result file in S3 should be deleted, and the item in the dynamodb will be updated
 
 ## Restore Process
 
-1. Initiate a SNS topic: xsunan_restore. When the user subsribe the premium, publish the message to the SNS topic
+#### A.Restore
+
+1. Initiate a SNS topic: xsunan_restore. When the user subsribe the premium (/subscribe), publish the message to the SNS topic
 2. Initiate a SQS named xsunan_restore which subsribe the SNS topic xsunan_restore. In restore.py, long polling the messages from this queue. And once receive a message, start to restore all the result files of this user.
-3. Initiate a SNS topic: xsunan_thaw. In step 2, when we restore the file, we will take the url of the topic-xsunan_thaw as a parameter, then when the restore job is completed, it will automatically public a message to the topic.
-4. Initiate a SQS topic: xsunan_thaw which subsribes the SNS topic-xsunan_thaw. In thaw.py, long polling messages from the queue. Once a message is received, obtain the body of the object and upload it to S3.
-5. I add a variable in DynamoDB: existed. to indicate whether the result file has been obtained and upladed to S3.
+3. I add a variable in DynamoDB: existed. to indicate whether the result file has been obtained and upladed to S3. In restore.py, I set the exised variable to False.
+
+#### B.Thaw
+
+1. Initiate a SNS topic: xsunan_thaw. In step 2, when we restore the file, we will take the url of the topic-xsunan_thaw as a parameter, then when the restore job is completed, it will automatically public a message to the topic.
+2. Initiate a SQS topic: xsunan_thaw which subsribes the SNS topic-xsunan_thaw. In thaw.py, long polling messages from the queue. 
+3. Once a message is received, obtain the body of the object and upload it to S3. And update the exsisted variable to true
 
 # Extra Credit:
 
