@@ -74,7 +74,7 @@ def poll_result_queue():
             sender = config['aws']['EMAIL_SENDER']
             recipients = user_email
             subject = "Job Finished"
-            detail_url = "https://xsunan.ucmpcs.org:4433/annotations/{}".format(job_id)
+            detail_url = "https://xsunan.ucmpcs.org/annotations/{}".format(job_id)
             body = "Dear {},\nYour submitted job {} has completed.\
              You can check via the below website.\n{}".format(user_name, job_id,detail_url)
 
