@@ -39,8 +39,10 @@ The modification is in views.py and annotate.html
 
 1. The first scale out instance was added as soon as the scale-out alarm has been in alarm. —— This is because the evaluation period I set is 1 minute (and the data point is 1 out of 1 minute). Hence, after a minute's large load, the alarm is in alarm, and the policy is executed.
 2.  Since it needs to wait 300 seconds after the last policy, and will need 1 minite to initiate the instance. In this way, the interval is around 6 minutes. 
-3. When the number of the instances come to 10, it will not increase any more, since the max number of instances set in the property is 10.
-4. There is a decline at around 17:35. It was caused by the scale in policy which was triggered at 17:35 since the response time is below the setting. Then at 17:36 as usual (the interval is 6 minutes, and the last started instance is at 17:30) a new instance is added, so the number of instance increased to 5 again.
+3. During the time, both the scale in and the scale out policies are triggered in every minute (except at 17:35 only the scale in policy is triggered). When both policies are triggered, AWS follows the scale out policy. In this way, during the time, scale out policy dominates, and causes the increase of instances rather than decreasing every minute. (Reference: https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-troubleshooting/)
+4. When the number of the instances come to 10, it will not increase any more, since the max number of instances set in the property is 10.
+5. There is a decline at around 17:35. It was caused by the scale in policy which was triggered at 17:35 since the response time is below the setting. Then at 17:36 as usual (the interval is 6 minutes, and the last started instance is at 17:30) a new instance is added, so the number of instance increased to 5 again.
+   1. The possible reason may be the network bottleneck. Since the scale out of the annotators are quite stable, but the web servers are not stable.
 
 ### E
 
@@ -62,8 +64,10 @@ The modification is in views.py and annotate.html
 
 ### E
 
-1. After I killed the ann_load.py, the scale out policy will not be triggered, and the scale in policy will work. Since the wait property is not set, and the datapoint is one in a minute, so every minute one instance will be terminated due to the scale in policy.
-2. When the number of the instances came to 2, it will not decrease any more, since the minimum number of intances set in the policy is 2.
+1. After I killed the ann_load.py, the scale out policy will not be triggered, and the scale in policy will work. Since the wait property is not set, and the datapoint is one in a minute, so every minute if the number of sent messages are less than 5, one instance will be terminated due to the scale in policy.
+2. In this case, the instances are not decreased every minute. The possible reason maybe:
+   1. Jobs are still runing after I stopped sending notification. Since in my implementation I sent arount 4000 notifications, it take a while to complete all the jobs. Hence, even after I stopped sending notification, part of the jobs are still be running. After they completed, they will send out notifications which causes the scale in policy not in alarm. 
+3. When the number of the instances came to 2, it will not decrease any more, since the minimum number of intances set in the policy is 2.
 
 ## References:
 
