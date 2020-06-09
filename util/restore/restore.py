@@ -138,11 +138,15 @@ def get_user_archive(user_id):
     items = response['Items']
     archives = []
     for job in items:
-        archive = {
-            "s3_key_result_file": job['s3_key_result_file'],
-            "archive_id": job['results_file_archive_id'],
-            "job_id": job['job_id']
-        }
+        try:
+            archive = {
+                "s3_key_result_file": job['s3_key_result_file'],
+                "archive_id": job['results_file_archive_id'],
+                "job_id": job['job_id']
+            }
+        except KeyError as e:
+            # some job may not have results_file_archive_id if the user subscribes before 5 minites after the completion
+            continue
         archives.append(archive)
 
     return archives
