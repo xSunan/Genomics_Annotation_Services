@@ -36,7 +36,9 @@ def initiate_restore():
 
     while True:
         # long polling the messages with wait time seconds set to 20s
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.receive_message
         try:
+
             restore_response = sqs.receive_message(
                 QueueUrl=queue_url,
                 AttributeNames=[
