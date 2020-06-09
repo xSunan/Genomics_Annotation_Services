@@ -44,15 +44,20 @@ def annotate():
 
     bucket_name = app.config['AWS_S3_INPUTS_BUCKET']
     user_id = session['primary_identity']
-    # print(user_id)
+    profile = get_profile(identity_id = user_id)
+    if profile.role == 'free_user':
+        free_user = 1
+    else:
+        free_user = 0
+
     # Generate unique ID to be used as S3 key (name)
     key_name = app.config['AWS_S3_KEY_PREFIX'] + user_id + '/' + \
         str(uuid.uuid4()) + '~${filename}'
-    # print(key_name)
     # Create the redirect URL
     redirect_url = str(request.url) + '/job'
 
     # Define policy fields/conditions
+    #https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html
     encryption = app.config['AWS_S3_ENCRYPTION']
     acl = app.config['AWS_S3_ACL']
     fields = {
@@ -67,6 +72,7 @@ def annotate():
     ]
 
     # Generate the presigned POST call
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_post
     try:
         presigned_post = s3.generate_presigned_post(
             Bucket=bucket_name, 
@@ -79,17 +85,8 @@ def annotate():
         return abort(500)
         
     # Render the upload form which will parse/submit the presigned POST
-    return render_template('annotate.html', s3_post=presigned_post)
+    return render_template('annotate.html', s3_post=presigned_post, free_user = free_user)
 
-
-"""Fires off an annotation job
-Accepts the S3 redirect GET request, parses it to extract 
-required info, saves a job item to the database, and then
-publishes a notification for the annotator service.
-
-Note: Update/replace the code below with your own from previous
-homework assignments
-"""
 @app.route('/annotate/job', methods=['GET'])
 @authenticated
 def create_annotation_job_request():
@@ -106,41 +103,27 @@ def create_annotation_job_request():
         job_id = file.split("~")[0]
         input_file = s3_key.split("~")[1]
     except IndexError:
-        response = generate_error(500,"No enough information")
-        return jsonify(response), 500
-        # return abort(500)
+        app.logger.error(f"{e}")
+        return abort(500)
     except:
-        response = generate_error(500,"No enough information")
-        return jsonify(response), 500
-        # abort(500)
-
-    # # get user related info
-    # profile = get_profile(identity_id=user)
-    # email = profile.email
-    # name = profile.name
-
-    # print("extract succ ")
-    # Persist job to database
+        app.logger.error(f"{e}")
+        return abort(500)
 
     # connect to the dynamodb resource
+    # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.03.html
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name = app.config['AWS_REGION_NAME'])
         table_name = app.config['AWS_DYNAMODB_ANNOTATIONS_TABLE']
         ann_table = dynamodb.Table(table_name)
     except boto3.exceptions.ResourceNotExistsError as e:
-        response = generate_error(500,"ResourceNotExistsError")
-        return jsonify(response), 500
-        # return abort(500)
+        return abort(500)
     except botocore.exceptions.ClientError as e:
-        response = generate_error(500,"ClientError")
-        return jsonify(response), 500
+        return abort(500)
 
     ep_time = int(time.time())
     data = { 
         "job_id": job_id,
         "user_id": user,
-        # "user_email": email,
-        # "user_name": name,
         "input_file_name":input_file,
         "s3_inputs_bucket": bucket_name,
         "s3_key_input_file": s3_key,
@@ -150,45 +133,36 @@ def create_annotation_job_request():
     data_str = json.dumps(data)
 
     # put the item into table
+    # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.03.html
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.put_item
     try:
         ann_table.put_item(Item=data)
     except botocore.errorfactory.ResourceNotFoundException as e:
-        # response = generate_error(500, e.response['Error']['Message'])
-        # return jsonify(response), 500
         return abort(500)
     except botocore.exceptions.ClientError as e:
-        # response = generate_error(500, e.response['Error']['Message'])
-        # return jsonify(response), 500
         return abort(500)
 
     # Send message to request queue
     try:
-        sns = boto3.resource('sns', region_name='us-east-1')
+        sns = boto3.resource('sns', region_name = app.config['AWS_REGION_NAME'])
     except boto3.exceptions.ResourceNotExistsError as e:
-        # response = generate_error(500, e)
-        # return jsonify(response), 500
         return abort(500)
 
     try:
-        # topic = sns.Topic('arn:aws:sns:us-east-1:127134666975:xsunan_job_requests')
         topic_name = app.config['AWS_SNS_JOB_REQUEST_TOPIC']
         topic = sns.Topic(topic_name)
     except (botocore.errorfactory.NotFoundException, botocore.errorfactory.InvalidParameterException) as e:
-        # response = generate_error(500, e)
-        # return jsonify(response), 500
         return abort(500)
     
     # publish the notification
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sns.html#SNS.Client.publish
     try:
         response = topic.publish(
             Message= data_str,
             MessageStructure='String',
         )
     except (botocore.exceptions.ParamValidationError,botocore.exceptions.ClientError) as e:
-        # response = generate_error(500, e)
-        # return jsonify(response), 500
         return abort(500)
-
 
     return render_template('annotate_confirm.html', job_id=job_id)
 
@@ -198,23 +172,24 @@ def create_annotation_job_request():
 @app.route('/annotations', methods=['GET'])
 @authenticated
 def annotations_list():
+
     # connect to the dynamoDB
+    # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GettingStarted.Python.03.html
+
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name = app.config['AWS_REGION_NAME'])
         table_name = app.config['AWS_DYNAMODB_ANNOTATIONS_TABLE']
         ann_table = dynamodb.Table(table_name)
     except boto3.exceptions.ResourceNotExistsError as e:
-        response = generate_error(500,"ResourceNotExistsError")
-        return jsonify(response), 500
-        # return abort(500)
+        return abort(500)
     except botocore.exceptions.ClientError as e:
-        response = generate_error(500,"ClientError")
-        return jsonify(response), 500
+        return abort(500)
 
     # get the authorized user
     user_id = session['primary_identity']
 
     # Get list of annotations to display
+    #  https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html#querying-and-scanning
     try:
         response = ann_table.query(
             IndexName = 'user_id_index',
@@ -237,17 +212,15 @@ def annotations_list():
 def annotation_details(id):
     # connect to the dynamoDB
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name = app.config['AWS_REGION_NAME'])
         table_name = app.config['AWS_DYNAMODB_ANNOTATIONS_TABLE']
         ann_table = dynamodb.Table(table_name)
     except boto3.exceptions.ResourceNotExistsError as e:
-        response = generate_error(500,"ResourceNotExistsError")
-        return jsonify(response), 500
-        # return abort(500)
+        return abort(500)
     except botocore.exceptions.ClientError as e:
-        response = generate_error(500,"ClientError")
-        return jsonify(response), 500
+        return abort(500)
     
+    #  https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html#querying-and-scanning
     response = ann_table.query(
         KeyConditionExpression=Key('job_id').eq(id)
     )
@@ -264,7 +237,6 @@ def annotation_details(id):
             If you think you deserve to be granted access, please contact the \
             supreme leader of the mutating genome revolutionary party."
         ), 403
-        # abort(403)
 
     job['submit_time'] = datetime.fromtimestamp(job['submit_time'])
     free_access_expired = False
@@ -284,6 +256,7 @@ def annotation_details(id):
     return render_template('annotation_details.html', annotation=job,free_access_expired=free_access_expired)
 
 def create_presigned_download_url(result_object_key):
+    '''  Generate a presigned url for download  '''
     # Create a session client to the S3 service
     s3 = boto3.client('s3', 
         region_name=app.config['AWS_REGION_NAME'],
@@ -291,6 +264,7 @@ def create_presigned_download_url(result_object_key):
 
     result_bucket = app.config['AWS_S3_RESULTS_BUCKET']
 
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_url
     try:
         response = s3.generate_presigned_url('get_object',
             Params={
@@ -312,17 +286,15 @@ def create_presigned_download_url(result_object_key):
 def annotation_log(id):
      # connect to the dynamoDB
     try:
-        dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+        dynamodb = boto3.resource('dynamodb', region_name=app.config['AWS_REGION_NAME'])
         table_name = app.config['AWS_DYNAMODB_ANNOTATIONS_TABLE']
         ann_table = dynamodb.Table(table_name)
     except boto3.exceptions.ResourceNotExistsError as e:
-        response = generate_error(500,"ResourceNotExistsError")
-        return jsonify(response), 500
-        # return abort(500)
+        return abort(500)
     except botocore.exceptions.ClientError as e:
-        response = generate_error(500,"ClientError")
-        return jsonify(response), 500
+        return abort(500)
     
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html#querying-and-scanning
     response = ann_table.query(
         KeyConditionExpression=Key('job_id').eq(id)
     )
@@ -337,7 +309,6 @@ def annotation_log(id):
             If you think you deserve to be granted access, please contact the \
             supreme leader of the mutating genome revolutionary party."
         ), 403
-        # abort(403)
 
     # retrieve the log file's s3 key
     s3_key = job['s3_key_log_file']
@@ -348,6 +319,8 @@ def annotation_log(id):
     bucket_name = app.config['AWS_S3_RESULTS_BUCKET']
 
     # get the log file's object and read it
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.get_object
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Object.get
     try:
         object = s3.Object(bucket_name,s3_key)
         content = object.get()['Body'].read().decode()
@@ -373,7 +346,6 @@ def subscribe():
     elif (request.method == 'POST'):
         # Process the subscription request
         token = str(request.form['stripe_token']).strip()
-        # print(token)
         # Create a customer on Stripe
         stripe.api_key = app.config['STRIPE_SECRET_KEY']
         try:
@@ -404,21 +376,18 @@ def subscribe():
             sns = boto3.resource('sns', region_name=app.config['AWS_REGION_NAME'])
             topic_name = app.config['AWS_SNS_RESTORE_TOPIC']
             restore_topic = sns.Topic(topic_name)
-            # print("send message")
         except (botocore.errorfactory.NotFoundException, botocore.errorfactory.InvalidParameterException) as e:
             return abort(500)
         
         restore_notification = {
             "user_id": user_id
         }
-        # print(restore_notification)
         # publish the notification
         try:
             response = restore_topic.publish(
                 Message= json.dumps(restore_notification),
                 MessageStructure='String',
             )
-            # print(response)
         except (botocore.exceptions.ParamValidationError,botocore.exceptions.ClientError) as e:
             return abort(500)
         # Make sure you handle files not yet archived!

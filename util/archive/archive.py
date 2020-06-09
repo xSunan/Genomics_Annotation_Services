@@ -36,6 +36,7 @@ def relocate_result():
 
     while True:
         # long polling the messages with wait time seconds set to 20s
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.receive_message
         try:
             result_response = sqs.receive_message(
                 QueueUrl=queue_url,
@@ -64,7 +65,6 @@ def relocate_result():
 
             # check if the user is still a free user
             if profile['role'] == "premium_user":
-                # print("premium")
                 delete_message(sqs, queue_url, receipt_handle)
                 continue
 
@@ -76,6 +76,7 @@ def relocate_result():
 
             # get the log file's object and read it
             try:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.get_object
                 result_file = s3.get_object(Bucket= bucket_name,Key=s3_key_annot_file)
                 content = result_file['Body'].read()
             except botocore.exceptions.ClientError as e:
@@ -83,13 +84,11 @@ def relocate_result():
 
             # relocate the result file from s3 to glacier
             try: 
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.upload_archive
                 glacier = boto3.client('glacier',region_name=config['aws']['AwsRegionName'])
                 vault = config['aws']['VAULT_NAME']
                 response = glacier.upload_archive(vaultName=vault,body=content)
-                print(response['ResponseMetadata'])
                 archive_id = response['ResponseMetadata']['HTTPHeaders']['x-amz-archive-id']
-                print(archive_id)
-                # print(content.decode())
             except (glacier.exceptions.ResourceNotFoundException, glacier.exceptions.InvalidParameterValueException,\
             glacier.exceptions.MissingParameterValueException,glacier.exceptions.RequestTimeoutException,\
             glacier.exceptions.ServiceUnavailableException) as e:
@@ -98,13 +97,14 @@ def relocate_result():
             # update the status in dynamodb (add archive_id attribute and set the result_file existence attribute)
             # connect to the dynamoDB
             try:
-                dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+                dynamodb = boto3.resource('dynamodb', region_name=config['aws']['AwsRegionName'])
                 table_name = config['aws']['DYNAMODB_TABLE_NAME']
                 ann_table = dynamodb.Table(table_name)
             except (ClientError, boto3.exceptions.ResourceNotExistsError) as e:
                 print(e)
             
             try:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.update_item
                 response = ann_table.update_item(
                     Key={
                         'job_id': job_id
@@ -121,8 +121,8 @@ def relocate_result():
 
             # delete the result file in s3
             try:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.delete_object
                 s3.delete_object(Bucket = bucket_name,Key = s3_key_annot_file)
-                print("delete successfully")
             except ClientError as e:
                 print(e) 
 
@@ -133,6 +133,7 @@ def relocate_result():
 def delete_message(sqs, queue_url,receipt_handle):
     '''delete the message '''
     try:
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.delete_message
         dele_rsp = sqs.delete_message(
             QueueUrl = queue_url,
             ReceiptHandle = receipt_handle
@@ -154,7 +155,6 @@ def extract_info(message):
         print("Error: Input is not valid json format or doesn't have corresponding key")
         return None
 
-    print("succ return")
     return user_id,receipt_handle, job_id, s3_key_annot_file
 
 if __name__ == '__main__':

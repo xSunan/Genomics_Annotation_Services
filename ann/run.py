@@ -58,15 +58,7 @@ def upload_result(file_name):
       print("File name not valid\n"+e)
       return
     
-    # load user related info
-    # user_info_file = "{}/{}/user_info.txt".format(user_id, job_id)
-    # print(user_info_file)
-    # with open(user_info_file,"r") as f:
-    #     user_info = json.load(f)
-    #     user_name = user_info['name']
-    #     user_email = user_info['email']
-    #     print(user_name, user_email)
-     
+
     #upload the final output to s3
     s3_prefix = config['aws']['AWS_S3_KEY_PREFIX']
     annot_file = '{}.annot.vcf'.format(prefix)
@@ -75,6 +67,7 @@ def upload_result(file_name):
     log_key = '{}{}/{}.vcf.count.log'.format(s3_prefix,user_id,suffix)
     
     try:
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.upload_file
         s3.meta.client.upload_file(annot_file, bucket, annot_key)
         s3.meta.client.upload_file(log_file, bucket, log_key)
     except (FileNotFoundError, boto3.exceptions.S3UploadFailedError) as e:
@@ -82,11 +75,11 @@ def upload_result(file_name):
         return
 
     # delete the output file in instance
+    # https://docs.python.org/3/library/shutil.html#shutil.rmtree
     try:
         shutil.rmtree("./{}/{}".format(user_id,job_id))
     except FileNotFoundError as e:
         print(e)
-    # return log_key, annot_key, job_id,user_id,user_name,user_email
     return log_key, annot_key, job_id,user_id
 
 if __name__ == '__main__':
@@ -120,6 +113,7 @@ if __name__ == '__main__':
         
         if job_complete :
             # update the status to complete and add log and result files' key
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.update_item
             try:
                 response = ann_table.update_item(
                     Key={
@@ -135,7 +129,6 @@ if __name__ == '__main__':
                         ':b': "gas-results",
                         ':t': complete_time
                     },
-                    # ConditionExpression=" job_status = :p",
                     ReturnValues="UPDATED_NEW"
 
                 )
@@ -158,14 +151,12 @@ if __name__ == '__main__':
                 print(e)
                 exit(1)
 
-
             ep_time = int(time.time())
+
             # construct the notification
             result_notification = { 
                 "job_id": job_id,
                 "user_id": user_id,
-                # "user_name": user_name,
-                # "user_email": user_email,
                 "s3_results_bucket": config['aws']['AWS_S3_RESULTS_BUCKET'],
                 "s3_key_log_file": log_key,
                 "s3_key_annot_file": annot_key,
@@ -175,8 +166,6 @@ if __name__ == '__main__':
             archive_notification = {
                 "job_id": job_id,
                 "user_id": user_id,
-                # "user_name": user_name,
-                # "user_email": user_email,
                 "s3_results_bucket": config['aws']['AWS_S3_RESULTS_BUCKET'],
                 "s3_key_log_file": log_key,
                 "s3_key_annot_file": annot_key,
@@ -184,6 +173,7 @@ if __name__ == '__main__':
             }
 
             # publish a notification message to job_result and result_archive SNS when job is complete
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sns.html#SNS.Topic.publish
             try:
                 result_response = topic_result.publish(
                     Message= json.dumps(result_notification),
@@ -199,6 +189,7 @@ if __name__ == '__main__':
 
         else :
             # update the status to error
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.update_item
             try:
                 response = ann_table.update_item(
                     Key={
@@ -208,7 +199,6 @@ if __name__ == '__main__':
                     ExpressionAttributeValues={
                         ':r': "ERROR"
                     },
-                    # ConditionExpression=" job_status = :p",
                     ReturnValues="UPDATED_NEW"
 
                 )

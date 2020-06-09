@@ -29,7 +29,11 @@ University of Chicago
             <label for="upload">Select VCF Input File</label>
             <div class="input-group col-md-12">
               <span class="input-group-btn">
-                <span class="btn btn-default btn-file btn-lg">Browse&hellip; <input type="file" name="file" id="upload-file" /></span>
+                {% if free_user %}
+                  <span class="btn btn-default btn-file btn-lg">Browse&hellip; <input type="file" name="file" id="upload-file" class = "file-file" onchange="Filevalidation()"/></span>
+                {% else %}
+                  <span class="btn btn-default btn-file btn-lg">Browse&hellip; <input type="file" name="file" id="upload-file" /></span>
+                {% endif%}
               </span>
               <input type="text" class="form-control col-md-6 input-lg" readonly />
             </div>
@@ -44,4 +48,23 @@ University of Chicago
     </div>
     
   </div>
+
+  <script> 
+    Filevalidation = () => { 
+        const fi = document.getElementsByClassName("file-file")[0]; 
+        console.log(fi)
+        // Check if any file is selected. 
+        if (fi.files.length > 0) { 
+            for (const i = 0; i <= fi.files.length - 1; i++) { 
+  
+                const fsize = fi.files.item(i).size; 
+                if (fsize > 150000) { 
+                    alert( 
+                      "Please subsribe to upload a file larger than 150kb"); 
+                } 
+                
+            } 
+        } 
+    } 
+</script> 
 {% endblock %}

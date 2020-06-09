@@ -31,7 +31,7 @@ config.read('notify_config.ini')
 def poll_result_queue():
     # Connect to SQS and get the message queue, and connect to s3
     try:
-        sqs = boto3.client('sqs', region_name='us-east-1')
+        sqs = boto3.client('sqs', region_name=config['aws']['AwsRegionName'])
         queue_url = config['aws']['SQS_RESULT_URL']
     except boto3.exceptions.ResourceNotExistsError as e:
         print(e)
@@ -39,6 +39,7 @@ def poll_result_queue():
     while True:
         # long polling the messages with wait time seconds set to 20s
         try:
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.receive_message
             result_response = sqs.receive_message(
                 QueueUrl=queue_url,
                 AttributeNames=[
@@ -49,7 +50,7 @@ def poll_result_queue():
             )
         except botocore.errorfactory.QueueDoesNotExist as e:
             print(e)
-            continue;
+            continue
 
         try:
             messages = result_response['Messages']
@@ -82,6 +83,7 @@ def poll_result_queue():
 
             # delete the message
             try:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.delete_message
                 dele_rsp = sqs.delete_message(
                     QueueUrl = queue_url,
                     ReceiptHandle = receipt_handle
@@ -96,11 +98,8 @@ def extract_info(message):
         content = json.loads(message['Body'])
         receipt_handle = message['ReceiptHandle']
         data = json.loads(content['Message'])
-        # pprint(data)
         job_id = data['job_id']
         user_id = data['user_id']
-        # user_name = data['user_name']
-        # user_email = data['user_email']
     except (json.JSONDecodeError, KeyError):
         print("Error: Input is not valid json format or doesn't have corresponding key")
         return None

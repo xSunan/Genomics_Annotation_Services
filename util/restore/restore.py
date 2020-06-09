@@ -47,7 +47,7 @@ def initiate_restore():
             )
         except botocore.errorfactory.QueueDoesNotExist as e:
             print(e)
-            continue;
+            continue
 
         try:
             messages = restore_response['Messages']
@@ -65,7 +65,6 @@ def initiate_restore():
             user_id = data['user_id'] 
 
             archives = get_user_archive(user_id)
-            # print("here")
             # connect to glacier
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
             # initiate restore job
@@ -73,6 +72,7 @@ def initiate_restore():
                 print(archive['s3_key_result_file'])
                 description = json.dumps({'job_id':archive['job_id'],'s3_key':archive['s3_key_result_file']}) 
                 try:   
+                    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.initiate_job
                     response = glacier.initiate_job(
                         vaultName = config['aws']['VAULT_NAME'],
                         jobParameters = {
@@ -85,6 +85,7 @@ def initiate_restore():
                     )
                 # botocore.errorfactory.InsufficientCapacityException 
                 except:
+                    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.initiate_job
                     response = glacier.initiate_job(
                         vaultName = config['aws']['VAULT_NAME'],
                         jobParameters = {
@@ -95,17 +96,16 @@ def initiate_restore():
                             'Description': description
                         }
                     )
-                
-                print(response)
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.describe_job
                 status = glacier.describe_job(vaultName=config['aws']['VAULT_NAME'],
                     jobId=response['jobId'])
-                print(status)
 
             delete_message(sqs,queue_url,receipt_handle)
             
 
 
 def delete_message(sqs,queue_url,receipt_handle):
+    # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.delete_message
     try:
         dele_rsp = sqs.delete_message(
             QueueUrl = queue_url,
@@ -124,6 +124,7 @@ def get_user_archive(user_id):
         return None
 
     try:
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/guide/dynamodb.html#querying-and-scanning
         response = ann_table.query(
             IndexName = 'user_id_index',
             KeyConditionExpression=Key('user_id').eq(user_id)
@@ -141,8 +142,6 @@ def get_user_archive(user_id):
             "job_id": job['job_id']
         }
         archives.append(archive)
-        print(archive)
-    print(len(archives))
 
     return archives
 

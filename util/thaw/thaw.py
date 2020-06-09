@@ -50,7 +50,6 @@ def monitor_job():
             print(e)
             continue
 
-        
         try:
             messages = thaw_response['Messages']
             if len(messages) ==0:
@@ -58,47 +57,41 @@ def monitor_job():
         except KeyError:
             continue
 
-        # print(len(messages))
-
         for message in messages:
-            # print(message)
             content = json.loads(message['Body'])
             receipt_handle = message['ReceiptHandle']
-            # delete_message(sqs,queue_url,receipt_handle)
             try:
                 data = json.loads(content['Message'])
-                # pprint(data)
                 restore_job_id = data['JobId']
                 info = json.loads(data['JobDescription'])
                 s3_result_key = info['s3_key']
                 job_id = info['job_id']
             except :
-                # job_id = content['Message']
                 continue
-
-            print(s3_result_key)
 
             # connect to glacier
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.get_job_output
             job_resp = glacier.get_job_output(vaultName=config['aws']['VAULT_NAME'],
                     jobId=restore_job_id)
             file_content = job_resp['body']
-            print("startupload: "+s3_result_key)
 
-            #upload to the s3
+            # upload to the s3
+            # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Bucket.upload_fileobj
             s3 = boto3.client('s3',region_name=config['aws']['AwsRegionName'])
             s3.upload_fileobj(file_content, config['aws']['AWS_S3_RESULTS_BUCKET'], s3_result_key)
 
             # update the result_file exist status in dynamoDB
             # connect to the dynamoDB
             try:
-                dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
+                dynamodb = boto3.resource('dynamodb', region_name = config['aws']['AwsRegionName'])
                 table_name = config['aws']['DYNAMODB_TABLE_NAME']
                 ann_table = dynamodb.Table(table_name)
             except (ClientError, boto3.exceptions.ResourceNotExistsError) as e:
                 print(e)
             
             try:
+                # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb.html#DynamoDB.Client.update_item
                 response = ann_table.update_item(
                     Key={
                         'job_id': job_id
@@ -117,7 +110,9 @@ def monitor_job():
             
             
 def delete_message(sqs,queue_url,receipt_handle):
+    ''' delete the message '''
     try:
+        # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sqs.html#SQS.Client.receive_message
         dele_rsp = sqs.delete_message(
             QueueUrl = queue_url,
             ReceiptHandle = receipt_handle
