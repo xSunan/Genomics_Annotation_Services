@@ -55,18 +55,16 @@ def initiate_restore():
                 continue
         except KeyError:
             continue
-        # print(len(messages))
         for message in messages:
-            # print(message)
             content = json.loads(message['Body'])
             receipt_handle = message['ReceiptHandle']
             data = json.loads(content['Message'])
-
             user_id = data['user_id'] 
-
             archives = get_user_archive(user_id)
+
             # connect to glacier
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
+
             # initiate restore job
             for archive in archives:
                 description = json.dumps({'job_id':archive['job_id'],'s3_key':archive['s3_key_result_file']}) 
@@ -114,6 +112,9 @@ def delete_message(sqs,queue_url,receipt_handle):
         print(e)
 
 def get_user_archive(user_id):
+    '''
+    Get all the archive ids of the s3 result files of this user
+    '''
     try:
         dynamodb = boto3.resource('dynamodb', region_name=config['aws']['AwsRegionName'])
         table_name = config['aws']['AWS_DYNAMODB_ANNOTATIONS_TABLE']

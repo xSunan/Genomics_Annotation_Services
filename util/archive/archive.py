@@ -147,7 +147,6 @@ def extract_info(message):
         content = json.loads(message['Body'])
         receipt_handle = message['ReceiptHandle']
         data = json.loads(content['Message'])
-        pprint(data)
         job_id = data['job_id']
         user_id = data['user_id']
         s3_key_annot_file = data['s3_key_annot_file']
