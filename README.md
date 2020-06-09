@@ -29,11 +29,11 @@ The modification is in views.py and annotate.html
 
 ### 13. WEB server Automatic Scale observation: 
 
-![Web Instances Monitor](/Users/sunanxiang/Library/Application Support/typora-user-images/image-20200608154409084.png)
+![Web Instances Monitor](./readme_images/web_instances.png)
 
 
 
-![Web Locust Terminal](/Users/sunanxiang/Library/Application Support/typora-user-images/image-20200608155030213.png)
+![Web Locust Terminal](./readme_images/web_terminal.png)
 
 ### D:
 

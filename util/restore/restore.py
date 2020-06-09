@@ -69,7 +69,6 @@ def initiate_restore():
             glacier = boto3.client('glacier', region_name=config['aws']['AwsRegionName'])
             # initiate restore job
             for archive in archives:
-                print(archive['s3_key_result_file'])
                 description = json.dumps({'job_id':archive['job_id'],'s3_key':archive['s3_key_result_file']}) 
                 try:   
                     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.initiate_job
