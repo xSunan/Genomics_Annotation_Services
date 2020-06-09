@@ -85,16 +85,19 @@ def initiate_restore():
                 # botocore.errorfactory.InsufficientCapacityException 
                 except:
                     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.initiate_job
-                    response = glacier.initiate_job(
-                        vaultName = config['aws']['VAULT_NAME'],
-                        jobParameters = {
-                            'Type': "archive-retrieval",
-                            'ArchiveId': archive['archive_id'],
-                            'SNSTopic': config['aws']['SNS_THAW_TOPIC'],
-                            'Tier': 'Standard',
-                            'Description': description
-                        }
-                    )
+                    try:
+                        response = glacier.initiate_job(
+                            vaultName = config['aws']['VAULT_NAME'],
+                            jobParameters = {
+                                'Type': "archive-retrieval",
+                                'ArchiveId': archive['archive_id'],
+                                'SNSTopic': config['aws']['SNS_THAW_TOPIC'],
+                                'Tier': 'Standard',
+                                'Description': description
+                            }
+                        )
+                    except ClientError as e:
+                        continue
                 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/glacier.html#Glacier.Client.describe_job
                 status = glacier.describe_job(vaultName=config['aws']['VAULT_NAME'],
                     jobId=response['jobId'])
