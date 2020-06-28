@@ -1,11 +1,57 @@
-# gas-framework
-An enhanced web framework (based on [Flask](http://flask.pocoo.org/)) for use in the capstone project. Adds robust user authentication (via [Globus Auth](https://docs.globus.org/api/auth)), modular templates, and some simple styling based on [Bootstrap](http://getbootstrap.com/).
+# Genomics Annotation Service 
+A fully operational software-as-a-service for genomics analysis. Constructed of three parts: 
 
-Directory contents are as follows:
-* `/web` - The GAS web app files
-* `/ann` - Annotator files
-* `/util` - Utility scripts for notifications, archival, and restoration
-* `/aws` - AWS user data files
+- Annotation Service: perform genomics analysis
+  - a sequenced genome sample is analyzed to identify the locations of genes and all of the coding regions in a genome, and determine what those genes do 
+- Web Services: user interface to interact with the system
+  - request annotation job and upload input file
+  - check job status and jobs list
+  - check results forever for Premium users, within 3 days for Free users
+  - Subscribe to premium users, update account information
+- Util Services:
+  - send email to users when the job is completed
+  - archive the result files to Glacier when expired
+  - restore the result files to S3 when subscrib to premium
+
+1. 
+
+2. Directory contents are as follows:
+
+3. - `/web` - The GAS web app files
+   - `/ann` - Annotator files
+   - `/util` - Utility scripts for notifications, archival, and restoration
+   - `/aws` - AWS user data files
+
+## Key Functions
+
+​	\-  **Log in (via** **Globus Auth) to use the service** -- Some aspects of the service are available only to registered users. Two classes of users will be supported: Free and Premium. Premium users will have access to additional functionality, beyond that available to Free users. 
+
+​	\-  **Upgrade from a Free to a Premium user** -- Premium users will be required to provide a credit card for payment of the service subscription. The GAS will integrate with Stripe (www.stripe.com) for credit card payment processing. No real credit cards are required for this project :-) ...we will use only a test credit card (4242424242424242) provided by Stripe. 
+
+​	\-  **Submit an annotation job** -- Free users may only submit jobs of up to a certain size. Premium users may submit any size job. If a Free user submits an oversized job, the system will refuse it and will prompt the user to convert to a Premium user. 
+
+​	\-  **Receive notifications when annotation jobs finish** -- When their annotation request is complete, the GAS will send users an email that includes a link where they can view the log file and download the results file. 
+
+​	\-  **Browse jobs and download annotation results** -- The GAS will store annotation results for later retrieval. Users may view a list of their jobs (completed and running). Free users may download results up to 10 minutes after their job has completed; thereafter their results will be archived and only available to them if they convert to a Premium user. Premium users will always have all their data available for download. 
+
+## System Components
+
+The GAS will comprise the following components: 
+
+1. - An object store for input files, annotated (result) files, and job log files. 
+   - A low cost, highly-durable object store for archiving the data of Free users. 
+   - A key-value store for persisting information on annotation jobs. 
+   - A relational database for user account information. 
+   - A service that runs AnnTools for annotation. 
+   - A web application for users to interact with the GAS. 
+   - A set of message queues and notification topics for coordinating system activity. 
+   - Two auto-scaling groups to dynamically scale the web and the annotation services
+
+The diagram below shows the various GAS components/services and interactions:
+
+![diagram](./readme_images/diagram.png)
+
+* 
 
 ## Archive Process
 
@@ -29,13 +75,11 @@ Directory contents are as follows:
 2. Initiate a SQS topic: xsunan_thaw which subsribes the SNS topic-xsunan_thaw. In thaw.py, long polling messages from the queue. 
 3. Once a message is received, obtain the body of the object and upload it to S3. And update the exsisted variable to true
 
-# Extra Credit:
+## Scalabiliry
 
-### 2. file size check
+Using Locust to conduct load testing. Simulating 30 users to continuously visit the website. Below shows the behavior of scaling out and scaling in.
 
-The modification is in views.py and annotate.html
-
-### 13. WEB server Automatic Scale observation: 
+### WEB server Automatic Scale: 
 
 ![Web Instances Monitor](./readme_images/web_instances.png)
 
@@ -43,39 +87,15 @@ The modification is in views.py and annotate.html
 
 ![Web Locust Terminal](./readme_images/web_terminal.png)
 
-### D:
-
-1. The first scale out instance was added as soon as the scale-out alarm has been in alarm. —— This is because the evaluation period I set is 1 minute (and the data point is 1 out of 1 minute). Hence, after a minute's large load, the alarm is in alarm, and the policy is executed.
-2.  Since it needs to wait 300 seconds after the last policy, and will need 1 minite to initiate the instance. In this way, the interval is around 6 minutes. 
-3. During the time, both the scale in and the scale out policies are triggered in every minute (except at 17:35 only the scale in policy is triggered). When both policies are triggered, AWS follows the scale out policy. In this way, during the time, scale out policy dominates, and causes the increase of instances rather than decreasing every minute. (Reference: https://aws.amazon.com/premiumsupport/knowledge-center/auto-scaling-troubleshooting/)
-4. When the number of the instances come to 10, it will not increase any more, since the max number of instances set in the property is 10.
-5. There is a decline at around 17:35. It was caused by the scale in policy which was triggered at 17:35 since the response time is below the setting. Then at 17:36 as usual (the interval is 6 minutes, and the last started instance is at 17:30) a new instance is added, so the number of instance increased to 5 again.
-   1. The possible reason may be the network bottleneck. Since the scale out of the annotators are quite stable, but the web servers are not stable.
-
-### E
-
-1. After I closed the locust service, the scale out policy will not be triggered, and the scale in policy will work. Since the wait property is not set, and the datapoint is one in a minute, so every minute one instance will be terminated due to the scale in policy.
-2. When the number of the instances came to 2, it will not decrease any more, since the minimum number of intances set in the policy is 2.
 
 
+### Annotator server Automatic Scale: 
 
-### 14: Annotator server Automatic Scale observation: 
+Using SNS and SQS services to simulate job requests. Below shows the behavior of scaling out and scaling in.
 
 ![image-20200608123907629](./readme_images/ann_monitor.png)
 
-### D
 
-1. At around 10 minutes after send the messages frequently, the scale-out watch will be in alarm (since the we set 1 datapoint in 10 minutes, we need to wait for 10 minutes to collect a datapoint's data). 
-2. The scale out policy was firstly actioned as soon as the scale-out alarm has been in alarm. And the instance was successfully added after around 1 minute since it needs some time to initiate.
-3. The rest 9 instances were started to initiate every 6 minutes. Since it needs to wait 300 seconds after the last policy, and will need 1 minite to initiate the instance. In this way, the interval is around 6 minutes. 
-4. When the number of the instances come to 10, it will not increase any more, since the max number of instances set in the property is 10.
-
-### E
-
-1. After I killed the ann_load.py, the scale out policy will not be triggered, and the scale in policy will work. Since the wait property is not set, and the datapoint is one in a minute, so every minute if the number of sent messages are less than 5, one instance will be terminated due to the scale in policy.
-2. In this case, the instances are not decreased every minute. The possible reason maybe:
-   1. Jobs are still runing after I stopped sending notification. Since in my implementation I sent arount 4000 notifications, it take a while to complete all the jobs. Hence, even after I stopped sending notification, part of the jobs are still be running. After they completed, they will send out notifications which causes the scale in policy not in alarm. 
-3. When the number of the instances came to 2, it will not decrease any more, since the minimum number of intances set in the policy is 2.
 
 ## References:
 
