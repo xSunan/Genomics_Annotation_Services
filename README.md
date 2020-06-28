@@ -13,11 +13,11 @@ A fully operational software-as-a-service for genomics analysis. Constructed of 
   - archive the result files to Glacier when expired
   - restore the result files to S3 when subscrib to premium
 
-1. 
 
-2. Directory contents are as follows:
 
-3. - `/web` - The GAS web app files
+Directory contents are as follows:
+
+   - `/web` - The GAS web app files
    - `/ann` - Annotator files
    - `/util` - Utility scripts for notifications, archival, and restoration
    - `/aws` - AWS user data files
@@ -38,7 +38,7 @@ A fully operational software-as-a-service for genomics analysis. Constructed of 
 
 The GAS will comprise the following components: 
 
-1. - An object store for input files, annotated (result) files, and job log files. 
+   - An object store for input files, annotated (result) files, and job log files. 
    - A low cost, highly-durable object store for archiving the data of Free users. 
    - A key-value store for persisting information on annotation jobs. 
    - A relational database for user account information. 
